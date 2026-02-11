@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hex Puzzle — Puzzle Hexagonal</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- HUD Superior -->
+  <div id="hud">
+    <div id="hud-left">
+      <span id="level-name">Hex Puzzle</span>
+      <span id="level-description"></span>
+    </div>
+    <div id="hud-center">
+      <span id="move-counter">Movimentos: 0</span>
+    </div>
+    <div id="hud-right">
+      <button class="btn" id="btn-rules" title="Regras">❓ Regras</button>
+      <button class="btn" id="btn-undo" title="Desfazer (Ctrl+Z)">↩ Desfazer</button>
+      <button class="btn btn-danger" id="btn-reset" title="Reiniciar fase">🔄 Reiniciar</button>
+      <button class="btn" id="btn-levels" title="Selecionar fase">📋 Fases</button>
+    </div>
+  </div>
+
+  <!-- Área principal -->
+  <div id="main-area">
+    <div id="canvas-container">
+      <canvas id="gameCanvas"></canvas>
+    </div>
+
+    <!-- Mão do jogador -->
+    <div id="hand-panel">
+      <div id="hand-title">Mão</div>
+      <div id="hand-pieces"></div>
+    </div>
+  </div>
+
+  <!-- Overlay de mensagens (vitória/derrota) -->
+  <div id="overlay">
+    <div id="overlay-content">
+      <div id="overlay-title"></div>
+      <div id="overlay-message"></div>
+      <div id="overlay-buttons"></div>
+    </div>
+  </div>
+
+  <!-- Modal de seleção de fases -->
+  <div id="level-select-modal">
+    <div id="level-select-content">
+      <h2>🎯 Selecionar Fase</h2>
+      <div id="level-list"></div>
+      <button class="btn" id="close-level-select">Fechar</button>
+    </div>
+  </div>
+
+  <!-- Tooltip de regras -->
+  <div id="rules-tooltip">
+    <h4>Regras das Peças</h4>
+    <div class="rule-item red">
+      <strong>Vermelha (R):</strong> Remover se tiver 1+ vizinhos, mas NÃO todos.
+    </div>
+    <div class="rule-item blue">
+      <strong>Azul (B):</strong> Remover se NÃO tiver nenhum vizinho.
+    </div>
+    <div class="rule-item green">
+      <strong>Verde (G):</strong> Remover se TODOS os vizinhos estiverem preenchidos.
+    </div>
+    <div class="rule-item yellow">
+      <strong>Amarela (Y):</strong> Exatamente 3 vizinhos, sem pares opostos.
+    </div>
+    <div class="rule-item gray">
+      <strong>Cinza (▪):</strong> Removível somente quando for a última peça. Ignorada nas regras das outras.
+    </div>
+    <p style="margin-top: 10px; font-size: 0.9em; color: #aaa;">
+      ⭕ Círculo colorido = modificador: considera apenas peças DAQUELA cor como vizinhas.
+    </p>
+  </div>
+
+  <!-- Scripts -->
+  <script src="levels.js"></script>
+  <script src="game.js"></script>
+  <script src="renderer.js"></script>
+  <script src="solver.js"></script>
+
+  <script>
+    // ==========================================
+    // INICIALIZAÇÃO DO JOGO
+    // ==========================================
+
+    // Elementos DOM
+    const canvas = document.getElementById('gameCanvas');
+    const levelNameEl = document.getElementById('level-name');
+    const levelDescEl = document.getElementById('level-description');
+    const moveCounterEl = document.getElementById('move-counter');
+    const handPiecesEl = document.getElementById('hand-pieces');
+    const overlay = document.getElementById('overlay');
+    const overlayTitle = document.getElementById('overlay-title');
+    const overlayMessage = document.getElementById('overlay-message');
+    const overlayButtons = document.getElementById('overlay-buttons');
+    const levelSelectModal = document.getElementById('level-select-modal');
+    const levelListEl = document.getElementById('level-list');
+    const rulesTooltip = document.getElementById('rules-tooltip');
+
+    // Instâncias do jogo
+    const game = new Game();
+    const renderer = new Renderer(canvas, game);
+
+    // Callback para atualizar UI quando o estado muda
+    game.onStateChange = updateUI;
+
+    // ==========================================
+    // CARREGAR FASE
+    // ==========================================
+
+    function loadLevel(levelId) {
+      const level = LEVELS.find(l => l.id === levelId);
+      if (!level) return;
+
+      game.loadLevel(level);
+      renderer.resize();
+      hideOverlay();
+      hideLevelSelect();
+      updateUI();
+    }
+
+    // ==========================================
+    // ATUALIZAR INTERFACE
+    // ==========================================
+
+    function updateUI() {
+      // Atualizar nome e descrição da fase
+      if (game.currentLevel) {
+        levelNameEl.textContent = `Fase ${game.currentLevel.id}: ${game.currentLevel.name}`;
+        levelDescEl.textContent = game.currentLevel.description;
+      }
+
+      // Atualizar contador de movimentos
+      if (game.moveLimit) {
+        moveCounterEl.textContent = `Movimentos: ${game.moves} / ${game.moveLimit}`;
+        moveCounterEl.classList.toggle('over-limit', game.moves >= game.moveLimit);
+      } else {
+        moveCounterEl.textContent = `Movimentos: ${game.moves}`;
+        moveCounterEl.classList.remove('over-limit');
+      }
+
+      // Atualizar mão do jogador
+      updateHand();
+
+      // Verificar estados de jogo
+      if (game.state === 'won') {
+        showWinOverlay();
+      } else if (game.state === 'lost') {
+        showLoseOverlay();
+      }
+    }
+
+    /**
+     * Atualiza a área da mão do jogador
+     */
+    function updateHand() {
+      handPiecesEl.innerHTML = '';
+
+      const colorMap = {
+        red: '#DD2222',
+        blue: '#2244CC',
+        green: '#22AA22',
+        yellow: '#EECC00',
+        gray: '#999999'
+      };
+
+      const symbolMap = {
+        red: 'R',
+        blue: 'B',
+        green: 'G',
+        yellow: 'Y',
+        gray: '▪'
+      };
+
+      game.hand.forEach((piece, index) => {
+        const div = document.createElement('div');
+        div.className = `hand-piece ${piece.color}`;
+        div.textContent = symbolMap[piece.color] || '?';
+
+        if (game.selectedHandPiece === index) {
+          div.classList.add('selected');
+        }
+
+        // Modificador
+        if (piece.modifier) {
+          const dot = document.createElement('div');
+          dot.className = 'modifier-dot';
+          dot.style.backgroundColor = colorMap[piece.modifier] || '#888';
+          div.appendChild(dot);
+        }
+
+        div.addEventListener('click', (e) => {
+          e.stopPropagation();
+          if (game.selectedHandPiece === index) {
+            game.deselectHandPiece();
+          } else {
+            game.selectHandPiece(index);
+          }
+        });
+
+        handPiecesEl.appendChild(div);
+      });
+    }
+
+    // ==========================================
+    // OVERLAYS
+    // ==========================================
+
+    function showWinOverlay() {
+      overlayTitle.textContent = '🎉 Parabéns!';
+      overlayTitle.className = 'win';
+      overlayMessage.textContent = `Puzzle resolvido em ${game.moves} movimentos!`;
+
+      overlayButtons.innerHTML = '';
+
+      // Botão de próxima fase
+      const currentIdx = LEVELS.findIndex(l => l.id === game.currentLevel.id);
+      if (currentIdx < LEVELS.length - 1) {
+        const nextBtn = document.createElement('button');
+        nextBtn.className = 'btn btn-primary';
+        nextBtn.textContent = '▶ Próxima Fase';
+        nextBtn.addEventListener('click', () => {
+          loadLevel(LEVELS[currentIdx + 1].id);
+        });
+        overlayButtons.appendChild(nextBtn);
+      }
+
+      // Botão de replay
+      const replayBtn = document.createElement('button');
+      replayBtn.className = 'btn';
+      replayBtn.textContent = '🔄 Jogar Novamente';
+      replayBtn.addEventListener('click', () => {
+        game.reset();
+        hideOverlay();
+      });
+      overlayButtons.appendChild(replayBtn);
+
+      // Botão de fases
+      const levelsBtn = document.createElement('button');
+      levelsBtn.className = 'btn';
+      levelsBtn.textContent = '📋 Fases';
+      levelsBtn.addEventListener('click', () => {
+        hideOverlay();
+        showLevelSelect();
+      });
+      overlayButtons.appendChild(levelsBtn);
+
+      overlay.classList.add('visible');
+    }
+
+    function showLoseOverlay() {
+      overlayTitle.textContent = '❌ Limite Excedido!';
+      overlayTitle.className = 'lose';
+      overlayMessage.textContent = 'Limite de movimentos excedido! Tente novamente.';
+
+      overlayButtons.innerHTML = '';
+
+      const undoBtn = document.createElement('button');
+      undoBtn.className = 'btn';
+      undoBtn.textContent = '↩ Desfazer';
+      undoBtn.addEventListener('click', () => {
+        game.undo();
+        hideOverlay();
+      });
+      overlayButtons.appendChild(undoBtn);
+
+      const resetBtn = document.createElement('button');
+      resetBtn.className = 'btn btn-danger';
+      resetBtn.textContent = '🔄 Reiniciar';
+      resetBtn.addEventListener('click', () => {
+        game.reset();
+        hideOverlay();
+      });
+      overlayButtons.appendChild(resetBtn);
+
+      overlay.classList.add('visible');
+    }
+
+    function hideOverlay() {
+      overlay.classList.remove('visible');
+    }
+
+    // ==========================================
+    // SELEÇÃO DE FASES
+    // ==========================================
+
+    function showLevelSelect() {
+      levelListEl.innerHTML = '';
+
+      for (const level of LEVELS) {
+        const card = document.createElement('div');
+        card.className = 'level-card';
+        card.innerHTML = `
+          <h3>Fase ${level.id}: ${level.name}</h3>
+          <p>${level.description}</p>
+          <div class="level-info">
+            Tabuleiro: ${level.gridSize.cols}×${level.gridSize.rows} |
+            Peças: ${level.pieces.length} |
+            ${level.moveLimit ? `Limite: ${level.moveLimit} movimentos` : 'Sem limite'}
+          </div>
+        `;
+        card.addEventListener('click', () => {
+          loadLevel(level.id);
+        });
+        levelListEl.appendChild(card);
+      }
+
+      levelSelectModal.classList.add('visible');
+    }
+
+    function hideLevelSelect() {
+      levelSelectModal.classList.remove('visible');
+    }
+
+    // ==========================================
+    // TOOLTIP DE REGRAS
+    // ==========================================
+
+    let rulesVisible = false;
+
+    function toggleRules() {
+      rulesVisible = !rulesVisible;
+      if (rulesVisible) {
+        const btn = document.getElementById('btn-rules');
+        const rect = btn.getBoundingClientRect();
+        rulesTooltip.style.top = (rect.bottom + 5) + 'px';
+        rulesTooltip.style.right = '10px';
+        rulesTooltip.classList.add('visible');
+      } else {
+        rulesTooltip.classList.remove('visible');
+      }
+    }
+
+    // ==========================================
+    // EVENTOS DO CANVAS
+    // ==========================================
+
+    canvas.addEventListener('mousemove', (e) => {
+      const rect = canvas.getBoundingClientRect();
+      const x = (e.clientX - rect.left) * (canvas.width / rect.width);
+      const y = (e.clientY - rect.top) * (canvas.height / rect.height);
+      renderer.updateHover(x, y);
+
+      // Mudar cursor
+      const hex = renderer.hoverHex;
+      if (hex) {
+        const piece = game.getPiece(hex.q, hex.r);
+        if (piece && game.selectedHandPiece === null) {
+          canvas.style.cursor = game.canRemove(hex.q, hex.r) ? 'pointer' : 'not-allowed';
+        } else if (!piece && game.selectedHandPiece !== null && game.canPlaceAt(hex.q, hex.r)) {
+          canvas.style.cursor = 'pointer';
+        } else {
+          canvas.style.cursor = 'default';
+        }
+      } else {
+        canvas.style.cursor = 'default';
+      }
+    });
+
+    canvas.addEventListener('mouseleave', () => {
+      renderer.clearHover();
+      canvas.style.cursor = 'default';
+    });
+
+    canvas.addEventListener('click', (e) => {
+      if (game.state !== 'playing') return;
+
+      const rect = canvas.getBoundingClientRect();
+      const x = (e.clientX - rect.left) * (canvas.width / rect.width);
+      const y = (e.clientY - rect.top) * (canvas.height / rect.height);
+
+      const hex = renderer.pixelToHex(x, y);
+      if (!hex) {
+        // Clicou fora — desselecionar peça da mão
+        game.deselectHandPiece();
+        return;
+      }
+
+      const piece = game.getPiece(hex.q, hex.r);
+
+      if (game.selectedHandPiece !== null) {
+        // Modo de recolocação: tentar colocar peça
+        if (!piece && game.canPlaceAt(hex.q, hex.r)) {
+          const handIndex = game.selectedHandPiece;
+          renderer.addFadeIn(hex.q, hex.r);
+          game.placePiece(hex.q, hex.r, handIndex);
+          game.deselectHandPiece();
+        } else if (piece) {
+          // Clicou em peça com peça selecionada — desselecionar e tentar remover
+          game.deselectHandPiece();
+          if (game.canRemove(hex.q, hex.r)) {
+            renderer.addFadeOut(hex.q, hex.r, piece);
+            game.removePiece(hex.q, hex.r);
+          }
+        }
+      } else {
+        // Modo normal: tentar remover peça
+        if (piece && game.canRemove(hex.q, hex.r)) {
+          renderer.addFadeOut(hex.q, hex.r, piece);
+          game.removePiece(hex.q, hex.r);
+        }
+      }
+    });
+
+    // ==========================================
+    // EVENTOS DOS BOTÕES
+    // ==========================================
+
+    document.getElementById('btn-undo').addEventListener('click', () => {
+      game.undo();
+      hideOverlay();
+    });
+
+    document.getElementById('btn-reset').addEventListener('click', () => {
+      game.reset();
+      hideOverlay();
+    });
+
+    document.getElementById('btn-levels').addEventListener('click', () => {
+      showLevelSelect();
+    });
+
+    document.getElementById('btn-rules').addEventListener('click', () => {
+      toggleRules();
+    });
+
+    document.getElementById('close-level-select').addEventListener('click', () => {
+      hideLevelSelect();
+    });
+
+    // Fechar modais ao clicar fora
+    levelSelectModal.addEventListener('click', (e) => {
+      if (e.target === levelSelectModal) {
+        hideLevelSelect();
+      }
+    });
+
+    // Fechar regras ao clicar fora
+    document.addEventListener('click', (e) => {
+      if (rulesVisible && !rulesTooltip.contains(e.target) && e.target.id !== 'btn-rules') {
+        rulesVisible = false;
+        rulesTooltip.classList.remove('visible');
+      }
+    });
+
+    // ==========================================
+    // ATALHOS DE TECLADO
+    // ==========================================
+
+    document.addEventListener('keydown', (e) => {
+      if (e.ctrlKey && e.key === 'z') {
+        e.preventDefault();
+        game.undo();
+        hideOverlay();
+      }
+
+      if (e.key === 'Escape') {
+        game.deselectHandPiece();
+        hideLevelSelect();
+        hideOverlay();
+        if (rulesVisible) {
+          rulesVisible = false;
+          rulesTooltip.classList.remove('visible');
+        }
+      }
+
+      if (e.key === 'r' && !e.ctrlKey) {
+        game.reset();
+        hideOverlay();
+      }
+    });
+
+    // ==========================================
+    // REDIMENSIONAMENTO
+    // ==========================================
+
+    window.addEventListener('resize', () => {
+      renderer.resize();
+    });
+
+    // ==========================================
+    // INICIAR — Carregar a primeira fase
+    // ==========================================
+
+    loadLevel(1);
+
+    // Mensagem no console para o solver
+    console.log('%c🎯 Hex Puzzle', 'font-size: 20px; color: #00ff88;');
+    console.log('Use solve(levelId) para resolver uma fase. Ex: solve(1)');
+    console.log('Use solve(levelId, "dfs") para DFS. Ex: solve(3, "dfs")');
+  </script>
+
+</body>
+</html>
