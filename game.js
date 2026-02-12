@@ -225,7 +225,6 @@ class Game {
         if (!piece) return false;
 
         const neighbors = this.getNeighbors(q, r);
-        const color = piece.modifier || piece.color;
 
         // Gray: only removable when no non-gray pieces remain
         if (piece.color === "gray") {

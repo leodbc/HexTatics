@@ -737,13 +737,13 @@
                 document.getElementById("editor-save").addEventListener("click", () => { game.sound.click(); editorSave(); });
                 document.getElementById("editor-export").addEventListener("click", () => {
                     editor.name = document.getElementById("editor-name").value;
-                    const json = editor.exportJSON();
-                    navigator.clipboard.writeText(json).then(() => showStatus("📋 JSON copiado!", 2000)).catch(() => { prompt("Copie o JSON:", json); });
+                    const code = editor.exportCode();
+                    navigator.clipboard.writeText(code).then(() => showStatus("📋 Código copiado!", 2000)).catch(() => { prompt("Copie o código:", code); });
                 });
                 document.getElementById("editor-import").addEventListener("click", () => {
-                    const json = prompt("Cole o JSON da fase:");
-                    if (json && editor.importJSON(json)) { updateEditorUI(); showStatus("✅ Fase importada!", 2000); }
-                    else if (json) { showStatus("❌ JSON inválido!", 2000); }
+                    const input = prompt("Cole o código (HEX-...) ou JSON da fase:");
+                    if (input && editor.importCode(input)) { updateEditorUI(); showStatus("✅ Fase importada!", 2000); }
+                    else if (input) { showStatus("❌ Código inválido!", 2000); }
                 });
 
                 // Editor name sync

@@ -141,15 +141,62 @@ class Editor {
         }
     }
 
-    exportJSON() {
+    exportCode() {
         const level = this.toLevel();
-        delete level.id; delete level.category; delete level.custom;
-        return JSON.stringify(level);
+        const colorKey = { red: "r", blue: "b", green: "g", yellow: "y", gray: "x" };
+        const maskStr = level.mask.map(row => row.map(v => v ? "1" : "0").join("")).join(",");
+        const piecesStr = level.pieces.map(p => {
+            let s = colorKey[p.color] + p.q + "." + p.r;
+            if (p.modifier) s += colorKey[p.modifier];
+            return s;
+        }).join(";");
+        const data = [
+            level.name,
+            level.gridSize.cols + "x" + level.gridSize.rows,
+            level.moveLimit || 0,
+            level.par,
+            maskStr,
+            piecesStr
+        ].join("|");
+        return "HEX-" + btoa(unescape(encodeURIComponent(data)));
     }
 
-    importJSON(json) {
+    importCode(input) {
+        input = input.trim();
+        // Try compact code first
+        if (input.startsWith("HEX-")) {
+            try {
+                const data = decodeURIComponent(escape(atob(input.slice(4))));
+                const parts = data.split("|");
+                if (parts.length < 6) return false;
+                const keyColor = { r: "red", b: "blue", g: "green", y: "yellow", x: "gray" };
+                const [name, size, limit, par, maskStr, piecesStr] = parts;
+                const [cols, rows] = size.split("x").map(Number);
+                const mask = maskStr.split(",").map(row => row.split("").map(c => c === "1"));
+                const pieces = piecesStr.split(";").filter(Boolean).map(s => {
+                    const color = keyColor[s[0]];
+                    const rest = s.slice(1);
+                    const dotIdx = rest.indexOf(".");
+                    const afterDot = rest.slice(dotIdx + 1);
+                    const modChar = afterDot.match(/[rbgyx]$/);
+                    const q = parseInt(rest.slice(0, dotIdx));
+                    const r = parseInt(modChar ? afterDot.slice(0, -1) : afterDot);
+                    const p = { q, r, color };
+                    if (modChar) p.modifier = keyColor[modChar[0]];
+                    return p;
+                });
+                this.loadFromLevel({
+                    name, gridSize: { cols, rows },
+                    moveLimit: parseInt(limit) || null,
+                    par: parseInt(par),
+                    mask, pieces
+                });
+                return true;
+            } catch { return false; }
+        }
+        // Fallback: try JSON
         try {
-            const level = JSON.parse(json);
+            const level = JSON.parse(input);
             if (!level.gridSize || !level.pieces || !level.mask) return false;
             this.loadFromLevel(level);
             return true;
