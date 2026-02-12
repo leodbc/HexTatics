@@ -1,842 +1,1315 @@
-/* style.css — HexTatics – Tema moderno dark com glassmorphism */
+/* style.css — HexTatics: Tema escuro premium com suporte mobile */
 
+/* ===================== RESET E BASE ===================== */
 * {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-  -webkit-tap-highlight-color: transparent;
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
 }
 
 :root {
-  --bg-primary: #0d1117;
-  --bg-secondary: #161b22;
-  --bg-tertiary: #21262d;
-  --bg-glass: rgba(22, 27, 34, 0.85);
-  --border-primary: #30363d;
-  --border-accent: #388bfd;
-  --text-primary: #e6edf3;
-  --text-secondary: #8b949e;
-  --text-muted: #6e7681;
-  --accent-green: #3fb950;
-  --accent-blue: #388bfd;
-  --accent-purple: #a371f7;
-  --accent-red: #f85149;
-  --accent-yellow: #d29922;
-  --piece-red: #e5534b;
-  --piece-blue: #388bfd;
-  --piece-green: #3fb950;
-  --piece-yellow: #d29922;
-  --piece-gray: #6e7681;
-  --shadow-lg: 0 16px 48px rgba(0, 0, 0, 0.4);
-  --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.3);
-  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.2);
-  --radius-sm: 6px;
-  --radius-md: 12px;
-  --radius-lg: 16px;
-  --radius-xl: 20px;
-  --transition: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-html, body {
-  height: 100%;
-  width: 100%;
-  overflow: hidden;
+    --bg-dark: #0f0f1a;
+    --bg-panel: #16213e;
+    --bg-card: #1a1a3e;
+    --border: #0f3460;
+    --accent: #00ff88;
+    --accent-glow: rgba(0, 255, 136, 0.3);
+    --danger: #ff4444;
+    --text: #e0e0e0;
+    --text-dim: #8888aa;
+    --btn-bg: #0f3460;
+    --btn-hover: #533483;
+    --red: #DD2222;
+    --blue: #2244CC;
+    --green: #22AA22;
+    --yellow: #EECC00;
+    --gray: #999999;
 }
 
 body {
-  background: var(--bg-primary);
-  background-image:
-    radial-gradient(ellipse at 20% 50%, rgba(56, 139, 253, 0.06) 0%, transparent 50%),
-    radial-gradient(ellipse at 80% 20%, rgba(163, 113, 247, 0.06) 0%, transparent 50%),
-    radial-gradient(ellipse at 50% 80%, rgba(63, 185, 80, 0.04) 0%, transparent 50%);
-  color: var(--text-primary);
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
-  display: flex;
-  flex-direction: column;
-  user-select: none;
-  -webkit-user-select: none;
-  touch-action: manipulation;
+    background-color: var(--bg-dark);
+    color: var(--text);
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    overflow: hidden;
+    height: 100vh;
+    height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    user-select: none;
 }
 
-/* ==========================================
-   HEADER / HUD
-   ========================================== */
-
-#hud {
-  background: var(--bg-glass);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  padding: 10px 16px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  border-bottom: 1px solid var(--border-primary);
-  min-height: 52px;
-  z-index: 10;
-  flex-shrink: 0;
+/* ===================== TELA DE BOAS-VINDAS ===================== */
+#welcome-screen {
+    position: fixed;
+    inset: 0;
+    background: radial-gradient(ellipse at center, #1a1a3e 0%, #0f0f1a 70%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 200;
+    transition: opacity 0.6s, transform 0.6s;
 }
 
-#hud-left {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  min-width: 0;
-  flex-shrink: 1;
+#welcome-screen.hiding {
+    opacity: 0;
+    transform: scale(1.05);
+    pointer-events: none;
 }
 
-#hud-center {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  flex-shrink: 0;
+#welcome-screen h1 {
+    font-size: clamp(2em, 8vw, 4em);
+    font-weight: 800;
+    background: linear-gradient(135deg, var(--accent), #44ddff);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 8px;
+    letter-spacing: 2px;
 }
 
-#hud-right {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  flex-shrink: 0;
+#welcome-screen .subtitle {
+    font-size: clamp(0.9em, 3vw, 1.2em);
+    color: var(--text-dim);
+    margin-bottom: 24px;
 }
 
-#level-name {
-  font-size: 1em;
-  font-weight: 700;
-  color: var(--accent-green);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+.welcome-stats {
+    margin-bottom: 28px;
+    text-align: center;
+    color: var(--text-dim);
+    font-size: 0.85em;
 }
 
-#level-description {
-  font-size: 0.8em;
-  color: var(--text-secondary);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 280px;
+.welcome-progress-bar,
+.level-progress-bar {
+    width: 200px;
+    height: 6px;
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 3px;
+    margin: 0 auto 8px;
+    overflow: hidden;
 }
 
-#move-counter {
-  font-size: 0.9em;
-  font-weight: 600;
-  color: var(--text-primary);
-  background: var(--bg-tertiary);
-  padding: 5px 14px;
-  border-radius: 20px;
-  border: 1px solid var(--border-primary);
-  white-space: nowrap;
-  transition: var(--transition);
+.welcome-progress-fill,
+.level-progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), #44ddff);
+    border-radius: 3px;
+    transition: width 0.6s ease;
 }
 
-#move-counter.over-limit {
-  color: var(--accent-red);
-  border-color: var(--accent-red);
-  background: rgba(248, 81, 73, 0.1);
+#welcome-screen .btn-play,
+#welcome-screen .btn-continue {
+    font-size: 1.3em;
+    padding: 16px 48px;
+    border-radius: 50px;
+    background: linear-gradient(135deg, #0f3460, #533483);
+    border: 2px solid var(--accent);
+    color: #fff;
+    cursor: pointer;
+    font-weight: 700;
+    font-family: inherit;
+    transition: all 0.3s;
+    animation: pulse-glow 2s ease-in-out infinite;
+    margin: 6px;
 }
 
-/* ==========================================
-   BOTÕES
-   ========================================== */
-
-.btn {
-  background: var(--bg-tertiary);
-  color: var(--text-primary);
-  border: 1px solid var(--border-primary);
-  padding: 7px 14px;
-  border-radius: var(--radius-sm);
-  cursor: pointer;
-  font-size: 0.85em;
-  font-weight: 500;
-  transition: var(--transition);
-  white-space: nowrap;
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  font-family: inherit;
-  line-height: 1.4;
+#welcome-screen .btn-continue {
+    font-size: 1.1em;
+    padding: 12px 36px;
+    background: linear-gradient(135deg, #1a4a3a, #2a5a5a);
+    border-color: #44ddff;
+    animation: none;
 }
 
-.btn:hover {
-  background: var(--border-primary);
-  border-color: var(--text-muted);
-}
-
-.btn:active {
-  transform: scale(0.97);
-}
-
-.btn:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-  transform: none;
-}
-
-.btn-primary {
-  background: var(--accent-green);
-  border-color: var(--accent-green);
-  color: #fff;
-}
-
-.btn-primary:hover {
-  background: #46c258;
-  border-color: #46c258;
-}
-
-.btn-danger {
-  background: rgba(248, 81, 73, 0.15);
-  border-color: rgba(248, 81, 73, 0.4);
-  color: var(--accent-red);
-}
-
-.btn-danger:hover {
-  background: rgba(248, 81, 73, 0.25);
-  border-color: var(--accent-red);
-}
-
-.btn .btn-label {
-  display: inline;
-}
-
-/* ==========================================
-   ÁREA PRINCIPAL
-   ========================================== */
-
-#main-area {
-  display: flex;
-  flex: 1;
-  overflow: hidden;
-  position: relative;
-}
-
-#canvas-container {
-  flex: 1;
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 0;
-}
-
-#gameCanvas {
-  display: block;
-  width: 100%;
-  height: 100%;
-  touch-action: none;
-}
-
-/* ==========================================
-   MÃO DO JOGADOR
-   ========================================== */
-
-#hand-panel {
-  width: 80px;
-  background: var(--bg-glass);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border-left: 1px solid var(--border-primary);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 10px 6px;
-  overflow-y: auto;
-  z-index: 10;
-  flex-shrink: 0;
-  transition: var(--transition);
-}
-
-#hand-panel.has-pieces {
-  box-shadow: inset 0 0 20px rgba(63, 185, 80, 0.05);
-}
-
-#hand-title {
-  font-size: 0.7em;
-  color: var(--text-muted);
-  margin-bottom: 8px;
-  text-align: center;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 1.5px;
-}
-
-.hand-piece {
-  width: 52px;
-  height: 52px;
-  border-radius: var(--radius-md);
-  margin-bottom: 6px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 700;
-  font-size: 1.1em;
-  color: white;
-  transition: var(--transition);
-  border: 2px solid transparent;
-  position: relative;
-  box-shadow: var(--shadow-sm);
-  flex-shrink: 0;
-}
-
-.hand-piece:hover {
-  transform: scale(1.1);
-  border-color: var(--accent-green);
-  box-shadow: 0 0 12px rgba(63, 185, 80, 0.3);
-}
-
-.hand-piece:active {
-  transform: scale(1.05);
-}
-
-.hand-piece.selected {
-  border-color: var(--accent-green);
-  box-shadow: 0 0 16px rgba(63, 185, 80, 0.5), 0 0 32px rgba(63, 185, 80, 0.2);
-  transform: scale(1.12);
-  animation: pulse-glow 1.5s ease-in-out infinite;
+#welcome-screen .btn-play:hover,
+#welcome-screen .btn-continue:hover {
+    transform: scale(1.08);
+    box-shadow: 0 0 30px var(--accent-glow);
 }
 
 @keyframes pulse-glow {
-  0%, 100% { box-shadow: 0 0 16px rgba(63, 185, 80, 0.5), 0 0 32px rgba(63, 185, 80, 0.2); }
-  50% { box-shadow: 0 0 20px rgba(63, 185, 80, 0.7), 0 0 40px rgba(63, 185, 80, 0.3); }
+
+    0%,
+    100% {
+        box-shadow: 0 0 10px var(--accent-glow);
+    }
+
+    50% {
+        box-shadow: 0 0 25px var(--accent-glow), 0 0 50px rgba(0, 255, 136, 0.1);
+    }
+}
+
+#welcome-screen .hex-deco {
+    position: absolute;
+    opacity: 0.05;
+    font-size: 15em;
+    color: var(--accent);
+}
+
+#welcome-screen .hex-deco.top-left {
+    top: -40px;
+    left: -30px;
+}
+
+#welcome-screen .hex-deco.bot-right {
+    bottom: -40px;
+    right: -30px;
+}
+
+/* ===================== HUD SUPERIOR ===================== */
+#hud {
+    background: linear-gradient(180deg, var(--bg-panel) 0%, rgba(22, 33, 62, 0.9) 100%);
+    padding: 8px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+    gap: 8px;
+    flex-wrap: wrap;
+    min-height: 50px;
+    z-index: 10;
+}
+
+.hud-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+}
+
+.hud-center {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.hud-right {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+#level-name {
+    font-size: 1em;
+    font-weight: 700;
+    color: #fff;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+#level-description {
+    font-size: 0.75em;
+    color: var(--text-dim);
+    max-width: 220px;
+    display: none;
+}
+
+#move-counter {
+    font-size: 0.9em;
+    font-weight: 600;
+    color: var(--text);
+    background: rgba(15, 52, 96, 0.6);
+    padding: 4px 12px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    white-space: nowrap;
+}
+
+#move-counter.exceeded {
+    color: var(--danger);
+    border-color: var(--danger);
+    animation: pulse-red 1s ease-in-out infinite;
+}
+
+.timer-badge {
+    font-size: 0.8em;
+    color: var(--text-dim);
+    background: rgba(15, 52, 96, 0.4);
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-variant-numeric: tabular-nums;
+}
+
+@keyframes pulse-red {
+
+    0%,
+    100% {
+        box-shadow: 0 0 5px rgba(255, 68, 68, 0.3);
+    }
+
+    50% {
+        box-shadow: 0 0 15px rgba(255, 68, 68, 0.6);
+    }
+}
+
+/* ===================== BOTÕES ===================== */
+.btn {
+    background: var(--btn-bg);
+    color: var(--text);
+    border: 1px solid #1a4a7a;
+    padding: 6px 14px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.85em;
+    font-weight: 500;
+    font-family: inherit;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+    touch-action: manipulation;
+}
+
+.btn:hover {
+    background: var(--btn-hover);
+    border-color: #7b52ab;
+    transform: translateY(-1px);
+}
+
+.btn:active {
+    transform: translateY(0);
+}
+
+.btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.btn-icon {
+    padding: 6px 10px;
+    font-size: 1.1em;
+    min-width: 36px;
+    text-align: center;
+}
+
+.btn-undo {
+    background: #2a2a5e;
+}
+
+.btn-reset {
+    background: #4a1a1a;
+    border-color: #7a3333;
+}
+
+.btn-reset:hover {
+    background: #6a2222;
+}
+
+.btn-accent {
+    background: linear-gradient(135deg, #0f3460, #533483);
+    border-color: var(--accent);
+    color: #fff;
+    font-weight: 600;
+}
+
+.btn-accent:hover {
+    box-shadow: 0 0 15px var(--accent-glow);
+}
+
+.btn-large {
+    padding: 12px 28px;
+    font-size: 1em;
+}
+
+/* ===================== ÁREA DO CANVAS ===================== */
+#game-area {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    overflow: hidden;
+    min-height: 0;
+}
+
+#game-canvas {
+    flex: 1;
+    display: block;
+    cursor: pointer;
+    touch-action: none;
+}
+
+/* ===================== TOOLTIP FLUTUANTE ===================== */
+#tooltip {
+    position: absolute;
+    background: rgba(22, 33, 62, 0.95);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-size: 0.8em;
+    color: var(--text);
+    pointer-events: none;
+    z-index: 60;
+    max-width: 220px;
+    opacity: 0;
+    transition: opacity 0.15s;
+    backdrop-filter: blur(4px);
+    line-height: 1.4;
+}
+
+#tooltip.visible {
+    opacity: 1;
+}
+
+#tooltip .tooltip-title {
+    font-weight: 700;
+    margin-bottom: 2px;
+}
+
+#tooltip .tooltip-rule {
+    color: var(--text-dim);
+    font-size: 0.9em;
+}
+
+/* ===================== MÃO DO JOGADOR ===================== */
+#hand-area {
+    background: var(--bg-panel);
+    padding: 8px 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border-top: 1px solid var(--border);
+    min-height: 60px;
+    flex-shrink: 0;
+    overflow-x: auto;
+}
+
+#hand-label {
+    font-size: 0.8em;
+    color: var(--text-dim);
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+#hand-pieces {
+    display: flex;
+    gap: 6px;
+    flex-wrap: nowrap;
+}
+
+.hand-piece {
+    width: 42px;
+    height: 42px;
+    border-radius: 10px;
+    cursor: pointer;
+    border: 2px solid #444;
+    transition: all 0.2s ease;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.hand-piece:hover {
+    transform: scale(1.12);
+    box-shadow: 0 0 12px rgba(255, 255, 255, 0.15);
+}
+
+.hand-piece.selected {
+    border-color: var(--accent);
+    box-shadow: 0 0 16px var(--accent-glow);
+    transform: scale(1.15);
+    animation: selected-bounce 0.6s ease;
+}
+
+@keyframes selected-bounce {
+    0% {
+        transform: scale(1);
+    }
+
+    30% {
+        transform: scale(1.25);
+    }
+
+    100% {
+        transform: scale(1.15);
+    }
 }
 
 .hand-piece .modifier-dot {
-  position: absolute;
-  bottom: 4px;
-  right: 4px;
-  width: 14px;
-  height: 14px;
-  border-radius: 50%;
-  border: 1.5px solid rgba(0,0,0,0.5);
-  box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    border: 1.5px solid #000;
+    position: absolute;
 }
 
-.hand-piece.red { background: var(--piece-red); }
-.hand-piece.blue { background: var(--piece-blue); }
-.hand-piece.green { background: var(--piece-green); }
-.hand-piece.yellow { background: var(--piece-yellow); color: #1a1a1a; }
-.hand-piece.gray { background: var(--piece-gray); }
-
-.hand-empty {
-  color: var(--text-muted);
-  font-size: 0.75em;
-  text-align: center;
-  padding: 8px 4px;
-  line-height: 1.4;
-}
-
-/* ==========================================
-   OVERLAY
-   ========================================== */
-
+/* ===================== MODAIS / OVERLAYS ===================== */
 #overlay {
-  position: fixed;
-  top: 0; left: 0; right: 0; bottom: 0;
-  background: rgba(0, 0, 0, 0);
-  display: none;
-  align-items: center;
-  justify-content: center;
-  z-index: 100;
-  transition: background 0.3s ease;
-  padding: 20px;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.8);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    backdrop-filter: blur(6px);
+    padding: 16px;
 }
 
-#overlay.visible {
-  display: flex;
-  background: rgba(0, 0, 0, 0.7);
-  animation: overlayFadeIn 0.3s ease forwards;
+#overlay.active {
+    display: flex;
 }
 
-@keyframes overlayFadeIn {
-  from { background: rgba(0,0,0,0); }
-  to { background: rgba(0,0,0,0.7); }
+.modal {
+    background: linear-gradient(135deg, var(--bg-panel), var(--bg-card));
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 28px 24px;
+    max-width: 480px;
+    width: 100%;
+    text-align: center;
+    animation: modal-in 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+    max-height: 90vh;
+    overflow-y: auto;
 }
 
-#overlay-content {
-  background: var(--bg-secondary);
-  border: 1px solid var(--border-primary);
-  border-radius: var(--radius-xl);
-  padding: 32px 40px;
-  text-align: center;
-  max-width: 420px;
-  width: 100%;
-  box-shadow: var(--shadow-lg);
-  animation: overlayContentIn 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+@keyframes modal-in {
+    from {
+        transform: scale(0.8) translateY(20px);
+        opacity: 0;
+    }
+
+    to {
+        transform: scale(1) translateY(0);
+        opacity: 1;
+    }
 }
 
-@keyframes overlayContentIn {
-  from { opacity: 0; transform: scale(0.9) translateY(20px); }
-  to { opacity: 1; transform: scale(1) translateY(0); }
+.modal h2 {
+    font-size: 1.4em;
+    margin-bottom: 10px;
 }
 
-#overlay-title {
-  font-size: 1.6em;
-  font-weight: 700;
-  margin-bottom: 8px;
+.modal p {
+    color: var(--text-dim);
+    margin-bottom: 12px;
+    line-height: 1.5;
+    font-size: 0.9em;
 }
 
-#overlay-title.win { color: var(--accent-green); }
-#overlay-title.lose { color: var(--accent-red); }
-
-#overlay-message {
-  font-size: 0.95em;
-  color: var(--text-secondary);
-  margin-bottom: 24px;
-  line-height: 1.5;
+.modal .btn {
+    margin: 4px;
+    padding: 10px 20px;
 }
 
-#overlay-stars {
-  font-size: 2em;
-  margin-bottom: 16px;
-  letter-spacing: 4px;
+/* ===================== WIN MODAL ===================== */
+.modal.win {
+    border-color: var(--accent);
+    box-shadow: 0 0 40px rgba(0, 255, 136, 0.15);
 }
 
-#overlay-buttons {
-  display: flex;
-  gap: 8px;
-  justify-content: center;
-  flex-wrap: wrap;
+.modal.win .win-header h2 {
+    color: var(--accent);
+    text-shadow: 0 0 20px var(--accent-glow);
+    font-size: 1.6em;
+    margin-bottom: 2px;
 }
 
-#overlay-buttons .btn {
-  padding: 10px 20px;
-  font-size: 0.95em;
-  border-radius: var(--radius-md);
+.win-level-name {
+    color: var(--text-dim);
+    font-size: 0.85em;
+    margin-bottom: 12px;
 }
 
-/* ==========================================
-   MODAL SELEÇÃO DE FASES
-   ========================================== */
-
-#level-select-modal {
-  position: fixed;
-  top: 0; left: 0; right: 0; bottom: 0;
-  background: rgba(0, 0, 0, 0.8);
-  display: none;
-  align-items: center;
-  justify-content: center;
-  z-index: 200;
-  padding: 20px;
+.modal.win .stars {
+    font-size: 2em;
+    margin: 10px 0;
+    letter-spacing: 8px;
 }
 
-#level-select-modal.visible {
-  display: flex;
-  animation: overlayFadeIn 0.25s ease forwards;
+.win-star {
+    display: inline-block;
+    animation: star-pop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) both;
 }
 
-#level-select-content {
-  background: var(--bg-secondary);
-  border: 1px solid var(--border-primary);
-  border-radius: var(--radius-xl);
-  padding: 24px;
-  max-width: 560px;
-  width: 100%;
-  max-height: 85vh;
-  overflow-y: auto;
-  box-shadow: var(--shadow-lg);
-  animation: overlayContentIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+@keyframes star-pop {
+    from {
+        transform: scale(0) rotate(-30deg);
+        opacity: 0;
+    }
+
+    to {
+        transform: scale(1) rotate(0);
+        opacity: 1;
+    }
 }
 
-#level-select-content h2 {
-  color: var(--accent-green);
-  margin-bottom: 16px;
-  text-align: center;
-  font-size: 1.3em;
-  font-weight: 700;
+.win-star.star-off {
+    opacity: 0.15;
+    filter: grayscale(1);
+}
+
+/* Win stats grid */
+.win-stats {
+    display: flex;
+    justify-content: center;
+    gap: 24px;
+    margin: 16px 0;
+    padding: 14px;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 12px;
+}
+
+.win-stat {
+    text-align: center;
+}
+
+.win-stat-value {
+    font-size: 1.5em;
+    font-weight: 700;
+    color: #fff;
+    font-variant-numeric: tabular-nums;
+}
+
+.win-stat-label {
+    font-size: 0.7em;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-top: 2px;
+}
+
+.win-best-msg {
+    font-size: 0.85em;
+    color: var(--text-dim);
+    margin-bottom: 14px;
+    min-height: 20px;
+}
+
+.win-best-msg.perfect {
+    color: #ffd700;
+    font-weight: 600;
+}
+
+.win-best-msg.new-record {
+    color: var(--accent);
+    font-weight: 600;
+}
+
+.win-actions {
+    margin-top: 8px;
+}
+
+.win-secondary {
+    margin-top: 8px;
+}
+
+.win-secondary .btn {
+    font-size: 0.8em;
+    padding: 8px 14px;
+}
+
+/* ===================== GAME COMPLETE MODAL ===================== */
+.modal.game-complete {
+    border-color: #ffd700;
+    box-shadow: 0 0 50px rgba(255, 215, 0, 0.2);
+}
+
+.modal.game-complete h2 {
+    font-size: 1.8em;
+    color: #ffd700;
+    text-shadow: 0 0 20px rgba(255, 215, 0, 0.4);
+}
+
+.game-complete-sub {
+    font-size: 1em;
+    color: var(--text);
+    margin-bottom: 16px;
+}
+
+.total-stars {
+    font-size: 1.2em;
+    letter-spacing: 4px;
+    margin: 12px 0;
+    line-height: 1.8;
+}
+
+.game-complete-stats {
+    font-size: 0.9em;
+    color: #ffd700;
+    font-weight: 600;
+    margin-bottom: 16px;
+}
+
+/* ===================== LOSE MODAL ===================== */
+.modal.lose h2 {
+    color: var(--danger);
+}
+
+.modal.lose {
+    border-color: rgba(255, 68, 68, 0.4);
+}
+
+.lose-actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 12px;
+}
+
+/* ===================== SELETOR DE FASES ===================== */
+.level-progress {
+    margin-bottom: 16px;
+    text-align: center;
+}
+
+.level-progress span {
+    font-size: 0.8em;
+    color: var(--text-dim);
+}
+
+.level-progress .level-progress-bar {
+    width: 100%;
+    margin-bottom: 6px;
 }
 
 .level-grid {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 8px;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin: 12px 0;
 }
 
 .level-card {
-  background: var(--bg-tertiary);
-  border: 1px solid var(--border-primary);
-  border-radius: var(--radius-md);
-  padding: 14px 16px;
-  cursor: pointer;
-  transition: var(--transition);
-  display: flex;
-  align-items: center;
-  gap: 14px;
+    background: var(--btn-bg);
+    border: 1px solid #1a4a7a;
+    border-radius: 10px;
+    padding: 12px 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
 }
 
 .level-card:hover {
-  background: rgba(56, 139, 253, 0.1);
-  border-color: var(--accent-blue);
-  transform: translateX(4px);
-}
-
-.level-card:active {
-  transform: translateX(2px) scale(0.99);
+    background: var(--btn-hover);
+    border-color: #7b52ab;
+    transform: translateY(-2px);
 }
 
 .level-card.completed {
-  border-color: rgba(63, 185, 80, 0.3);
+    border-color: var(--accent);
+    background: rgba(0, 255, 136, 0.08);
 }
 
 .level-card.current {
-  border-color: var(--accent-blue);
-  background: rgba(56, 139, 253, 0.08);
+    box-shadow: 0 0 12px var(--accent-glow);
 }
 
-.level-card-number {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  background: var(--bg-primary);
-  border: 2px solid var(--border-primary);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 700;
-  font-size: 0.9em;
-  flex-shrink: 0;
-  color: var(--text-secondary);
+.level-card.locked {
+    opacity: 0.35;
+    pointer-events: none;
 }
 
-.level-card.completed .level-card-number {
-  background: rgba(63, 185, 80, 0.15);
-  border-color: var(--accent-green);
-  color: var(--accent-green);
+.level-card .level-num {
+    font-size: 1.3em;
+    font-weight: 700;
+    color: var(--accent);
 }
 
-.level-card-info {
-  flex: 1;
-  min-width: 0;
+.level-card.locked .level-num {
+    color: #666;
 }
 
-.level-card-info h3 {
-  font-size: 0.9em;
-  font-weight: 600;
-  color: var(--text-primary);
-  margin-bottom: 2px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+.level-card .level-title {
+    font-size: 0.7em;
+    color: #c0c0d0;
+    margin-top: 2px;
 }
 
-.level-card-info p {
-  font-size: 0.75em;
-  color: var(--text-muted);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+.level-card .level-stars {
+    font-size: 0.7em;
+    margin-top: 4px;
+    letter-spacing: 2px;
 }
 
-.level-card-meta {
-  font-size: 0.7em;
-  color: var(--text-muted);
-  white-space: nowrap;
-  flex-shrink: 0;
+.level-card .level-stars .star-off {
+    opacity: 0.2;
 }
 
-#close-level-select {
-  margin-top: 12px;
-  width: 100%;
-  padding: 10px;
-  border-radius: var(--radius-md);
+.level-card .lock-icon {
+    font-size: 1.2em;
+    color: #555;
 }
 
-/* ==========================================
-   TOOLTIP REGRAS
-   ========================================== */
-
-#rules-tooltip {
-  position: fixed;
-  background: var(--bg-secondary);
-  border: 1px solid var(--border-primary);
-  border-radius: var(--radius-lg);
-  padding: 16px 18px;
-  max-width: 320px;
-  width: calc(100vw - 32px);
-  font-size: 0.82em;
-  line-height: 1.6;
-  z-index: 150;
-  display: none;
-  box-shadow: var(--shadow-lg);
-  animation: overlayContentIn 0.25s ease;
+/* ===================== HELP MODAL ===================== */
+.rules-grid {
+    display: grid;
+    gap: 10px;
+    text-align: left;
+    margin: 12px 0;
 }
 
-#rules-tooltip.visible {
-  display: block;
+.rule-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: rgba(15, 52, 96, 0.3);
+    padding: 10px 12px;
+    border-radius: 8px;
 }
 
-#rules-tooltip h4 {
-  color: var(--accent-green);
-  margin-bottom: 10px;
-  font-size: 1em;
+.rule-swatch {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    flex-shrink: 0;
+    border: 2px solid #333;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1em;
+    color: rgba(255, 255, 255, 0.9);
 }
 
-.rule-item {
-  margin-bottom: 8px;
-  padding: 6px 10px;
-  border-radius: var(--radius-sm);
-  background: rgba(255,255,255,0.03);
-  border-left: 3px solid;
+.rule-text {
+    font-size: 0.82em;
+    line-height: 1.4;
 }
 
-.rule-item.red { border-color: var(--piece-red); }
-.rule-item.blue { border-color: var(--piece-blue); }
-.rule-item.green { border-color: var(--piece-green); }
-.rule-item.yellow { border-color: var(--piece-yellow); }
-.rule-item.gray { border-color: var(--piece-gray); }
-
-.rules-modifier-note {
-  margin-top: 12px;
-  font-size: 0.9em;
-  color: var(--text-muted);
-  padding: 8px 10px;
-  background: rgba(163, 113, 247, 0.06);
-  border-radius: var(--radius-sm);
-  border: 1px solid rgba(163, 113, 247, 0.15);
+.rule-text strong {
+    color: #fff;
 }
 
-/* ==========================================
-   TOAST / FEEDBACK
-   ========================================== */
-
-#toast-container {
-  position: fixed;
-  bottom: 20px;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 300;
-  pointer-events: none;
+.help-extras {
+    text-align: left;
+    margin-top: 12px;
+    padding: 10px 12px;
+    background: rgba(15, 52, 96, 0.2);
+    border-radius: 8px;
 }
 
-.toast {
-  background: var(--bg-secondary);
-  border: 1px solid var(--border-primary);
-  border-radius: var(--radius-md);
-  padding: 10px 20px;
-  color: var(--text-primary);
-  font-size: 0.85em;
-  box-shadow: var(--shadow-md);
-  animation: toastIn 0.3s ease, toastOut 0.3s ease 2s forwards;
-  white-space: nowrap;
+.help-extras p {
+    font-size: 0.78em;
+    margin-bottom: 4px;
+    color: var(--text-dim);
 }
 
-.toast.error {
-  border-color: rgba(248, 81, 73, 0.4);
-  color: var(--accent-red);
+/* ===================== TUTORIAL OVERLAY ===================== */
+#tutorial-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 70;
+    pointer-events: none;
 }
 
-@keyframes toastIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
+#tutorial-bubble {
+    position: absolute;
+    background: rgba(22, 33, 62, 0.97);
+    border: 2px solid var(--accent);
+    border-radius: 12px;
+    padding: 14px 18px;
+    max-width: 280px;
+    font-size: 0.85em;
+    line-height: 1.5;
+    color: var(--text);
+    pointer-events: auto;
+    z-index: 71;
+    box-shadow: 0 0 30px var(--accent-glow);
+    animation: tutorial-pop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-@keyframes toastOut {
-  from { opacity: 1; }
-  to { opacity: 0; }
+@keyframes tutorial-pop {
+    from {
+        transform: scale(0.8);
+        opacity: 0;
+    }
+
+    to {
+        transform: scale(1);
+        opacity: 1;
+    }
 }
 
-/* ==========================================
-   MOBILE CONTROLS
-   ========================================== */
-
-#mobile-controls {
-  display: none;
-  background: var(--bg-glass);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border-top: 1px solid var(--border-primary);
-  padding: 8px 12px;
-  gap: 6px;
-  justify-content: center;
-  align-items: center;
-  z-index: 10;
-  flex-shrink: 0;
+#tutorial-bubble .tutorial-arrow {
+    position: absolute;
+    width: 0;
+    height: 0;
+    border: 8px solid transparent;
 }
 
-#mobile-controls .btn {
-  flex: 1;
-  max-width: 120px;
-  justify-content: center;
-  padding: 10px 8px;
-  font-size: 0.82em;
+#tutorial-bubble .tutorial-arrow.arrow-down {
+    bottom: -16px;
+    left: 50%;
+    transform: translateX(-50%);
+    border-top-color: var(--accent);
 }
 
-/* ==========================================
-   RESPONSIVIDADE
-   ========================================== */
+#tutorial-bubble .tutorial-arrow.arrow-up {
+    top: -16px;
+    left: 50%;
+    transform: translateX(-50%);
+    border-bottom-color: var(--accent);
+}
+
+#tutorial-bubble .btn {
+    margin-top: 10px;
+    width: 100%;
+}
+
+/* ===================== CONFETTI CANVAS ===================== */
+#confetti-canvas {
+    position: fixed;
+    inset: 0;
+    z-index: 150;
+    pointer-events: none;
+}
+
+/* ===================== STATUS MESSAGE ===================== */
+#status-message {
+    position: absolute;
+    bottom: 12px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(22, 33, 62, 0.95);
+    padding: 8px 20px;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    font-size: 0.82em;
+    color: var(--text);
+    opacity: 0;
+    transition: opacity 0.3s, transform 0.3s;
+    pointer-events: none;
+    z-index: 50;
+    white-space: nowrap;
+    backdrop-filter: blur(4px);
+}
+
+#status-message.visible {
+    opacity: 1;
+    transform: translateX(-50%) translateY(-4px);
+}
+
+/* ===================== RESPONSIVIDADE ===================== */
+@media (min-width: 769px) {
+    #level-description {
+        display: block;
+    }
+}
 
 @media (max-width: 768px) {
-  #hud {
-    padding: 8px 12px;
-    min-height: 46px;
-    gap: 6px;
-  }
+    #hud {
+        padding: 6px 10px;
+        gap: 4px;
+        min-height: 44px;
+    }
 
-  #hud-left {
-    gap: 8px;
-  }
+    .hud-left {
+        gap: 8px;
+    }
 
-  #level-name {
-    font-size: 0.85em;
-  }
+    .hud-right {
+        gap: 4px;
+    }
 
-  #level-description {
-    display: none;
-  }
+    #level-name {
+        font-size: 0.85em;
+    }
 
-  #hud-right .btn .btn-label {
-    display: none;
-  }
+    #move-counter {
+        font-size: 0.8em;
+        padding: 3px 8px;
+    }
 
-  #hud-right .btn {
-    padding: 7px 10px;
-    font-size: 1em;
-  }
+    .timer-badge {
+        font-size: 0.7em;
+        padding: 2px 6px;
+    }
 
-  #hud-right {
-    gap: 4px;
-  }
+    .btn {
+        padding: 5px 10px;
+        font-size: 0.8em;
+    }
 
-  #move-counter {
-    font-size: 0.8em;
-    padding: 4px 10px;
-  }
+    .btn-icon {
+        padding: 5px 8px;
+        font-size: 1em;
+        min-width: 32px;
+    }
 
-  #hand-panel {
-    width: 64px;
-    padding: 8px 4px;
-  }
+    #hand-area {
+        padding: 6px 10px;
+        min-height: 52px;
+    }
 
-  .hand-piece {
-    width: 44px;
-    height: 44px;
-    font-size: 0.95em;
-    border-radius: var(--radius-sm);
-  }
+    .hand-piece {
+        width: 36px;
+        height: 36px;
+    }
 
-  #level-select-content {
-    padding: 16px;
-    border-radius: var(--radius-lg);
-  }
+    .modal {
+        padding: 20px 16px;
+    }
 
-  #overlay-content {
-    padding: 24px 20px;
-    border-radius: var(--radius-lg);
-  }
+    .modal h2 {
+        font-size: 1.2em;
+    }
 
-  #overlay-title {
-    font-size: 1.3em;
-  }
+    .win-stats {
+        gap: 16px;
+        padding: 10px;
+    }
+
+    .win-stat-value {
+        font-size: 1.2em;
+    }
+
+    .level-grid {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 6px;
+    }
+
+    .level-card {
+        padding: 10px 6px;
+    }
 }
 
-@media (max-width: 480px) {
-  #hud {
-    padding: 6px 10px;
-    min-height: 42px;
-  }
+@media (max-width: 400px) {
+    .level-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
 
-  #hud-right {
-    display: none;
-  }
+    .win-stats {
+        gap: 12px;
+    }
 
-  #mobile-controls {
+    .editor-actions {
+        flex-direction: column;
+        gap: 6px;
+    }
+
+    .editor-tools {
+        gap: 4px;
+    }
+}
+
+/* ===================== WELCOME EDITOR BUTTON ===================== */
+.btn-editor-welcome {
+    font-size: 0.95em;
+    padding: 10px 28px;
+    border-radius: 50px;
+    background: rgba(15, 52, 96, 0.6);
+    border: 1px solid rgba(0, 255, 136, 0.3);
+    color: var(--text);
+    cursor: pointer;
+    font-weight: 500;
+    font-family: inherit;
+    transition: all 0.3s;
+    margin-top: 20px;
+}
+
+.btn-editor-welcome:hover {
+    background: rgba(83, 52, 131, 0.5);
+    border-color: var(--accent);
+    transform: scale(1.05);
+}
+
+/* ===================== EDITOR HUD ===================== */
+#editor-hud {
+    background: linear-gradient(180deg, #1a2a4a 0%, rgba(22, 33, 62, 0.95) 100%);
+    padding: 8px 16px;
     display: flex;
-  }
-
-  #main-area {
-    flex-direction: column;
-  }
-
-  #hand-panel {
-    width: 100%;
-    flex-direction: row;
-    border-left: none;
-    border-top: 1px solid var(--border-primary);
-    padding: 6px 10px;
-    overflow-x: auto;
-    overflow-y: hidden;
-    max-height: 68px;
-    min-height: 50px;
-    gap: 6px;
-  }
-
-  #hand-title {
-    writing-mode: vertical-lr;
-    text-orientation: mixed;
-    margin: 0 2px 0 0;
-    font-size: 0.6em;
-  }
-
-  .hand-piece {
-    width: 42px;
-    height: 42px;
-    margin-bottom: 0;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 2px solid var(--accent);
     flex-shrink: 0;
-  }
+    gap: 8px;
+    flex-wrap: wrap;
+    min-height: 50px;
+    z-index: 10;
+}
 
-  .hand-empty {
-    writing-mode: horizontal-tb;
-    white-space: nowrap;
+.editor-name-input {
+    background: rgba(15, 15, 30, 0.6);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: #fff;
+    font-size: 0.9em;
+    font-weight: 600;
+    padding: 4px 10px;
+    font-family: inherit;
+    width: 140px;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+.editor-name-input:focus {
+    border-color: var(--accent);
+}
+
+.editor-size-label {
+    font-size: 0.75em;
+    color: var(--text-dim);
+    margin-right: 4px;
+}
+
+.editor-size-val {
+    font-size: 0.9em;
+    font-weight: 700;
+    color: #fff;
+    min-width: 20px;
+    text-align: center;
+    display: inline-block;
+}
+
+.editor-sep {
+    color: var(--text-dim);
+    margin: 0 4px;
+    font-size: 0.8em;
+}
+
+.editor-count {
+    font-size: 0.8em;
+    color: var(--text-dim);
+    margin-right: 8px;
+}
+
+.btn-tiny {
+    padding: 3px 8px;
+    font-size: 0.8em;
+    min-width: 28px;
+    text-align: center;
+}
+
+/* ===================== EDITOR TOOLBAR ===================== */
+#editor-toolbar {
+    background: var(--bg-panel);
+    padding: 8px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    border-top: 2px solid var(--accent);
+    flex-shrink: 0;
+    z-index: 10;
+}
+
+.editor-tools {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.editor-section {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.editor-divider {
+    width: 1px;
+    height: 24px;
+    background: var(--border);
+    margin: 0 4px;
+}
+
+.editor-tool {
+    width: 38px;
+    height: 38px;
+    border-radius: 8px;
+    border: 2px solid transparent;
+    background: rgba(15, 52, 96, 0.4);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    font-size: 1.1em;
+    color: var(--text);
+    font-family: inherit;
+}
+
+.editor-tool:hover {
+    background: rgba(83, 52, 131, 0.4);
+    transform: scale(1.08);
+}
+
+.editor-tool.active {
+    border-color: var(--accent);
+    box-shadow: 0 0 10px var(--accent-glow);
+    background: rgba(0, 255, 136, 0.1);
+}
+
+.tool-swatch {
+    width: 22px;
+    height: 22px;
+    border-radius: 5px;
+    display: block;
+    border: 1px solid rgba(0, 0, 0, 0.3);
+}
+
+/* Modifier palette */
+.editor-mod-palette {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 8px;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 8px;
+    margin-left: 8px;
+}
+
+.editor-mod-label {
     font-size: 0.7em;
-  }
+    color: var(--text-dim);
+    margin-right: 2px;
+}
 
-  #level-select-content {
-    max-height: 90vh;
-    border-radius: var(--radius-md);
-    padding: 14px;
-  }
-
-  .level-card {
-    padding: 10px 12px;
-    gap: 10px;
-  }
-
-  .level-card-number {
+.editor-mod {
     width: 30px;
     height: 30px;
+    border-radius: 6px;
+    border: 2px solid transparent;
+    background: rgba(15, 52, 96, 0.3);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
     font-size: 0.8em;
-  }
-
-  #overlay-content {
-    padding: 20px 16px;
-  }
-
-  #overlay-buttons .btn {
-    padding: 10px 14px;
-    font-size: 0.85em;
-  }
-
-  #rules-tooltip {
-    top: auto !important;
-    bottom: 60px !important;
-    right: 10px !important;
-    left: 10px !important;
-    max-width: none;
-  }
+    color: var(--text-dim);
+    font-family: inherit;
 }
 
-/* ==========================================
-   SCROLLBAR
-   ========================================== */
-
-::-webkit-scrollbar {
-  width: 5px;
-  height: 5px;
+.editor-mod.active {
+    border-color: #ff88ff;
+    box-shadow: 0 0 8px rgba(255, 136, 255, 0.3);
 }
 
-::-webkit-scrollbar-track {
-  background: transparent;
+.mod-dot {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    display: block;
+    border: 1px solid rgba(0, 0, 0, 0.4);
 }
 
-::-webkit-scrollbar-thumb {
-  background: var(--border-primary);
-  border-radius: 3px;
+/* Editor actions */
+.editor-actions {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
 }
 
-::-webkit-scrollbar-thumb:hover {
-  background: var(--text-muted);
+.editor-settings {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.78em;
+    color: var(--text-dim);
 }
 
-* {
-  scrollbar-width: thin;
-  scrollbar-color: var(--border-primary) transparent;
+.editor-num-input {
+    width: 50px;
+    background: rgba(15, 15, 30, 0.6);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    color: #fff;
+    font-size: 1em;
+    padding: 3px 6px;
+    font-family: inherit;
+    outline: none;
+    text-align: center;
+}
+
+.editor-num-input:focus {
+    border-color: var(--accent);
+}
+
+.editor-buttons {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+}
+
+/* ===================== CUSTOM LEVELS IN LEVEL SELECT ===================== */
+.custom-section-title {
+    font-size: 0.9em;
+    color: var(--accent);
+    margin: 16px 0 8px;
+    text-align: left;
+}
+
+.custom-card {
+    position: relative;
+}
+
+.custom-card-actions {
+    display: flex;
+    gap: 3px;
+    justify-content: center;
+    margin-top: 6px;
+}
+
+.custom-card-actions .btn {
+    font-size: 0.7em;
+    padding: 3px 8px;
+    min-width: 28px;
+}
+
+.level-select-actions {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    margin-top: 12px;
+}
+
+/* ===================== EDITOR RESPONSIVE ===================== */
+@media (max-width: 768px) {
+    #editor-hud {
+        padding: 6px 10px;
+        gap: 4px;
+        min-height: 44px;
+    }
+
+    .editor-name-input {
+        width: 100px;
+        font-size: 0.8em;
+    }
+
+    #editor-toolbar {
+        padding: 6px 8px;
+        gap: 6px;
+    }
+
+    .editor-tool {
+        width: 32px;
+        height: 32px;
+        font-size: 0.95em;
+    }
+
+    .tool-swatch {
+        width: 18px;
+        height: 18px;
+    }
+
+    .editor-mod {
+        width: 26px;
+        height: 26px;
+    }
+
+    .mod-dot {
+        width: 14px;
+        height: 14px;
+    }
+
+    .editor-buttons .btn {
+        font-size: 0.75em;
+        padding: 5px 8px;
+    }
+
+    .editor-settings {
+        font-size: 0.7em;
+    }
+
+    .editor-num-input {
+        width: 40px;
+    }
 }

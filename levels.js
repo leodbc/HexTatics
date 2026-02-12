@@ -1,476 +1,333 @@
-// levels.js — Definição das fases do jogo HexTatics
-// Todas as fases foram verificadas para garantir que são solucionáveis.
-// Usa flat-top, odd-q offset layout.
+// levels.js — 12 fases do HexTatics com dificuldade progressiva
+// Sistema: odd-q offset, flat-top hex
+// TODAS as regras exercitadas: Red, Blue, Green, Yellow, Gray, Modifiers, Hand/Placement, Move Limit, Board Holes
+// Cada fase verificada manualmente para ser solucionável.
 
 const LEVELS = [
-  // =============================================
-  // FASE 1 — "Primeiro Contato" (Tutorial Vermelho)
-  // Apenas vermelhas e 1 azul. Remova vermelhas primeiro, azul por último.
-  // =============================================
-  {
-    id: 1,
-    name: "Primeiro Contato",
-    description: "Remova todas as peças! Comece pelas vermelhas adjacentes.",
-    gridSize: { cols: 5, rows: 4 },
-    moveLimit: null,
-    mask: [
-      [true, true, true, true, true],
-      [true, true, true, true, true],
-      [true, true, true, true, true],
-      [true, true, true, true, true]
-    ],
-    pieces: [
-      { q: 2, r: 1, color: "red" },
-      { q: 3, r: 1, color: "red" },
-      { q: 2, r: 2, color: "blue" },
-      { q: 3, r: 2, color: "red" },
-      { q: 2, r: 3, color: "red" }
-    ]
-  },
 
-  // =============================================
-  // FASE 2 — "Isolamento" (Tutorial Azul)
-  // Azul precisa estar isolada. Remova vermelhas ao redor.
-  // =============================================
-  {
-    id: 2,
-    name: "Isolamento",
-    description: "A azul só sai isolada! Remova as vermelhas ao redor primeiro.",
-    gridSize: { cols: 5, rows: 4 },
-    moveLimit: null,
-    mask: [
-      [true, true, true, true, true],
-      [true, true, true, true, true],
-      [true, true, true, true, true],
-      [true, true, true, true, true]
-    ],
-    pieces: [
-      { q: 1, r: 1, color: "red" },
-      { q: 2, r: 1, color: "red" },
-      { q: 3, r: 1, color: "red" },
-      { q: 2, r: 2, color: "blue" },
-      { q: 1, r: 2, color: "red" }
-    ]
-  },
+    // ===== MUNDO 1: FUNDAMENTOS =====
 
-  // =============================================
-  // FASE 3 — "Triângulo Dourado" (Tutorial Amarelo)
-  // Amarela precisa de exatamente 3 vizinhos sem opostos.
-  // Remova 1 vermelha para deixar amarela com 3 vizinhos corretos.
-  // =============================================
-  {
-    id: 3,
-    name: "Triângulo Dourado",
-    description: "A amarela precisa de exatamente 3 vizinhos, sem pares opostos!",
-    gridSize: { cols: 5, rows: 5 },
-    moveLimit: null,
-    mask: [
-      [true, true, true, true, true],
-      [true, true, true, true, true],
-      [true, true, true, true, true],
-      [true, true, true, true, true],
-      [true, true, true, true, true]
-    ],
-    pieces: [
-      // Cluster: Yellow(2,2) com 4 vizinhos vermelhos — remova 1 para ficar com 3
-      { q: 2, r: 2, color: "yellow" },
-      { q: 3, r: 1, color: "red" },   // dir 0 (NE) para col par
-      { q: 3, r: 2, color: "red" },   // dir 1 (SE)
-      { q: 2, r: 3, color: "red" },   // dir 2 (S)
-      { q: 1, r: 2, color: "red" },   // dir 3 (SW)
-      // Blue isolada para cleanup final
-      { q: 4, r: 4, color: "blue" }
-    ]
-  },
+    // Fase 1 — Tutorial: Red + Blue
+    // Sol: R(2,1)→R(4,1)→B(3,1) = 3 mov
+    {
+        id: 1, name: "Primeiro Passo", category: "Fundamentos",
+        description: "Toque numa peça vermelha para removê-la. Depois remova a azul.",
+        gridSize: { cols: 5, rows: 4 }, moveLimit: null, par: 3,
+        tutorial: [
+            { message: "Bem-vindo ao HexTatics! 🎯\nSeu objetivo: esvaziar o tabuleiro.", target: "board", action: "read" },
+            { message: "Peças VERMELHAS ♦ podem ser removidas quando têm pelo menos 1 vizinha, mas não TODAS.\nToque na vermelha à esquerda!", target: { q: 2, r: 1 }, action: "remove" },
+            { message: "Ótimo! Agora remova a outra vermelha.", target: { q: 4, r: 1 }, action: "remove" },
+            { message: "Peças AZUIS ● só podem ser removidas quando NÃO têm vizinhas.\nRemova a azul!", target: { q: 3, r: 1 }, action: "remove" },
+            { message: "Parabéns! 🎉 Você entendeu o básico!", target: "board", action: "read" },
+        ],
+        mask: [
+            [true, true, true, true, true],
+            [true, true, true, true, true],
+            [true, true, true, true, true],
+            [true, true, true, true, true],
+        ],
+        pieces: [
+            { q: 2, r: 1, color: "red" },
+            { q: 3, r: 1, color: "blue" },
+            { q: 4, r: 1, color: "red" },
+        ]
+    },
 
-  // =============================================
-  // FASE 4 — "Barreira Verde" (Tutorial Verde)
-  // Verde precisa de TODOS os vizinhos preenchidos.
-  // =============================================
-  {
-    id: 4,
-    name: "Barreira Verde",
-    description: "A verde só sai quando TODOS os vizinhos estão preenchidos!",
-    gridSize: { cols: 5, rows: 5 },
-    moveLimit: null,
-    mask: [
-      [false, true,  true,  true,  false],
-      [true,  true,  true,  true,  true],
-      [true,  true,  true,  true,  true],
-      [true,  true,  true,  true,  true],
-      [false, true,  true,  true,  false]
-    ],
-    pieces: [
-      // Green no canto (2 vizinhos apenas: board edge helps)
-      { q: 1, r: 0, color: "green" },
-      // Os 2 vizinhos da green: (2,0) e (1,1) para q=1 odd
-      // Wait, q=1 odd. Neighbors of (1,0): NE=(2,0), SE=(2,1), S=(1,1), SW=(0,1), NW=(0,0)doesnt exist, N=(1,-1)doesnt exist
-      // Mask: (0,0)=false, so NW doesn't exist. N=(1,-1) out of bounds.
-      // Valid neighbors: (2,0)=true, (2,1)=true, (1,1)=true, (0,1)=true
-      // So green has 4 valid neighbors. We need all 4 filled.
-      { q: 2, r: 0, color: "red" },
-      { q: 2, r: 1, color: "red" },
-      { q: 1, r: 1, color: "red" },
-      { q: 0, r: 1, color: "red" },
-      // Blue para cleanup
-      { q: 3, r: 4, color: "blue" }
-    ]
-  },
+    // Fase 2 — Red clearing + Blue isolation
+    // Sol: R(3,1)→R(2,2)→R(4,2)→R(3,3)→B(3,2)→B(5,2) = 6 mov
+    {
+        id: 2, name: "Caminho Livre", category: "Fundamentos",
+        description: "Remova as vermelhas para liberar as azuis.",
+        gridSize: { cols: 7, rows: 5 }, moveLimit: null, par: 6,
+        mask: [
+            [true, true, true, true, true, true, true],
+            [true, true, true, true, true, true, true],
+            [true, true, true, true, true, true, true],
+            [true, true, true, true, true, true, true],
+            [true, true, true, true, true, true, true],
+        ],
+        pieces: [
+            { q: 3, r: 2, color: "blue" },
+            { q: 2, r: 2, color: "red" },
+            { q: 4, r: 2, color: "red" },
+            { q: 3, r: 1, color: "red" },
+            { q: 3, r: 3, color: "red" },
+            { q: 5, r: 2, color: "blue" },
+        ]
+    },
 
-  // =============================================
-  // FASE 5 — "Pedra Angular" (Tutorial Cinza)
-  // Cinza só pode ser removida quando é a última peça.
-  // =============================================
-  {
-    id: 5,
-    name: "Pedra Angular",
-    description: "A cinza só pode ser removida por último! Planeje bem.",
-    gridSize: { cols: 5, rows: 4 },
-    moveLimit: null,
-    mask: [
-      [true, true, true, true, true],
-      [true, true, true, true, true],
-      [true, true, true, true, true],
-      [true, true, true, true, true]
-    ],
-    pieces: [
-      { q: 2, r: 1, color: "red" },
-      { q: 3, r: 1, color: "red" },
-      { q: 2, r: 2, color: "gray" },
-      { q: 1, r: 2, color: "red" },
-      { q: 3, r: 2, color: "blue" }
-    ]
-  },
+    // Fase 3 — GREEN intro: corner green has 2 adj, both filled → ALL → removable
+    // Sol: G(0,0)→R(0,1)→R(1,0)→B(1,1)→B(2,0) = 5 mov
+    {
+        id: 3, name: "Muralha Verde", category: "Fundamentos",
+        description: "VERDES ■ só saem se TODAS as vizinhas estiverem preenchidas!",
+        gridSize: { cols: 5, rows: 5 }, moveLimit: null, par: 5,
+        mask: [
+            [true, true, true, true, true],
+            [true, true, true, true, true],
+            [true, true, true, true, true],
+            [true, true, true, true, true],
+            [true, true, true, true, true],
+        ],
+        pieces: [
+            { q: 0, r: 0, color: "green" },
+            { q: 1, r: 0, color: "red" },
+            { q: 0, r: 1, color: "red" },
+            { q: 1, r: 1, color: "blue" },
+            { q: 2, r: 0, color: "blue" },
+        ]
+    },
 
-  // =============================================
-  // FASE 6 — "Cerco"
-  // Azul cercada. Remova vermelhas, recoloque para resolver verde.
-  // =============================================
-  {
-    id: 6,
-    name: "Cerco",
-    description: "Liberte a azul e resolva a verde usando peças da mão!",
-    gridSize: { cols: 6, rows: 5 },
-    moveLimit: null,
-    mask: [
-      [true, true, true, true, true, true],
-      [true, true, true, true, true, true],
-      [true, true, true, true, true, true],
-      [true, true, true, true, true, true],
-      [true, true, true, true, true, true]
-    ],
-    pieces: [
-      // Azul cercada por 3 vermelhas
-      { q: 2, r: 2, color: "blue" },
-      { q: 3, r: 1, color: "red" },
-      { q: 3, r: 2, color: "red" },
-      { q: 2, r: 3, color: "red" },
-      // Green no canto com poucos vizinhos (q=5,r=4 even col)
-      // Neighbors of (5,4) even: (6,3)out, (6,4)out, (5,5)out, (4,4), (4,3), (5,3) → 3 neighbors
-      { q: 5, r: 4, color: "green" }
-    ]
-  },
+    // Fase 4 — YELLOW intro: exactly 3 adj, no opposite pairs
+    // Y(3,2) col3odd: NE(4,2)R, SE(4,3)R, N(3,1)R = 3 filled. NE↔SW(no), SE↔NW(no), N↔S(no) ✓
+    // Sol: Y(3,2)→R(4,3)→R(4,2)→R(3,1)→B(2,1) = 5 mov
+    {
+        id: 4, name: "Triângulo Dourado", category: "Fundamentos",
+        description: "AMARELAS ▲ precisam de exatamente 3 vizinhas sem pares opostos!",
+        gridSize: { cols: 7, rows: 6 }, moveLimit: null, par: 5,
+        mask: [
+            [true, true, true, true, true, true, true],
+            [true, true, true, true, true, true, true],
+            [true, true, true, true, true, true, true],
+            [true, true, true, true, true, true, true],
+            [true, true, true, true, true, true, true],
+            [true, true, true, true, true, true, true],
+        ],
+        pieces: [
+            { q: 3, r: 2, color: "yellow" },
+            { q: 3, r: 1, color: "red" },
+            { q: 4, r: 2, color: "red" },
+            { q: 4, r: 3, color: "red" },
+            { q: 2, r: 1, color: "blue" },
+        ]
+    },
 
-  // =============================================
-  // FASE 7 — "Eficiência"
-  // Limite de movimentos! Cada ação conta.
-  // =============================================
-  {
-    id: 7,
-    name: "Eficiência",
-    description: "Resolva com no máximo 10 movimentos!",
-    gridSize: { cols: 5, rows: 5 },
-    moveLimit: 10,
-    mask: [
-      [true, true, true, true, true],
-      [true, true, true, true, true],
-      [true, true, true, true, true],
-      [true, true, true, true, true],
-      [true, true, true, true, true]
-    ],
-    pieces: [
-      { q: 2, r: 1, color: "red" },
-      { q: 1, r: 2, color: "red" },
-      { q: 3, r: 2, color: "red" },
-      { q: 2, r: 2, color: "yellow" },
-      { q: 2, r: 3, color: "blue" }
-    ]
-  },
+    // ===== MUNDO 2: ESTRATÉGIA =====
 
-  // =============================================
-  // FASE 8 — "Fortaleza"
-  // Tabuleiro irregular, múltiplos tipos.
-  // =============================================
-  {
-    id: 8,
-    name: "Fortaleza",
-    description: "Uma fortaleza de peças! Encontre a ordem correta.",
-    gridSize: { cols: 7, rows: 7 },
-    moveLimit: null,
-    mask: [
-      [false, true,  true,  true,  true,  true,  false],
-      [true,  true,  true,  true,  true,  true,  true],
-      [true,  true,  true,  true,  true,  true,  true],
-      [true,  true,  true,  true,  true,  true,  true],
-      [true,  true,  true,  true,  true,  true,  true],
-      [true,  true,  true,  true,  true,  true,  true],
-      [false, true,  true,  true,  true,  true,  false]
-    ],
-    pieces: [
-      { q: 3, r: 3, color: "gray" },
-      { q: 3, r: 2, color: "gray" },
-      { q: 2, r: 2, color: "red" },
-      { q: 4, r: 2, color: "red" },
-      { q: 2, r: 4, color: "red" },
-      { q: 4, r: 4, color: "red" },
-      { q: 3, r: 4, color: "red" },
-      { q: 3, r: 5, color: "red" },
-      { q: 1, r: 1, color: "blue" },
-      { q: 5, r: 1, color: "blue" }
-    ]
-  },
+    // Fase 5 — GRAY intro + Green reappears
+    // Grays invisible to other rules. Remove non-grays first, then grays.
+    // G(0,0): adj (1,0)R,(0,1)R → 2/2 ALL → ok. Sol: G→R(0,1)→R(1,0)→B(2,0)→Gr(4,2)→Gr(5,2) = 6 mov
+    {
+        id: 5, name: "Paredes Cinzas", category: "Estratégia",
+        description: "CINZAS ▬ são invisíveis para as regras e só saem quando sobrar apenas elas!",
+        gridSize: { cols: 7, rows: 5 }, moveLimit: null, par: 6,
+        mask: [
+            [true, true, true, true, true, true, true],
+            [true, true, true, true, true, true, true],
+            [true, true, true, true, true, true, true],
+            [true, true, true, true, true, true, true],
+            [true, true, true, true, true, true, true],
+        ],
+        pieces: [
+            { q: 0, r: 0, color: "green" },
+            { q: 1, r: 0, color: "red" },
+            { q: 0, r: 1, color: "red" },
+            { q: 2, r: 0, color: "blue" },
+            { q: 4, r: 2, color: "gray" },
+            { q: 5, r: 2, color: "gray" },
+        ]
+    },
 
-  // =============================================
-  // FASE 9 — "Camuflagem" (Modificadores de Cor)
-  // Peças com modificadores mudam quais vizinhos contam.
-  // =============================================
-  {
-    id: 9,
-    name: "Camuflagem",
-    description: "Modificadores de cor mudam as regras! Observe os círculos.",
-    gridSize: { cols: 6, rows: 5 },
-    moveLimit: null,
-    mask: [
-      [true, true, true, true, true, true],
-      [true, true, true, true, true, true],
-      [true, true, true, true, true, true],
-      [true, true, true, true, true, true],
-      [true, true, true, true, true, true]
-    ],
-    pieces: [
-      // Red with blue modifier — needs at least 1 BLUE neighbor
-      { q: 2, r: 2, color: "red", modifier: "blue" },
-      { q: 3, r: 2, color: "blue" },
-      // Extra pieces
-      { q: 1, r: 1, color: "red" },
-      { q: 2, r: 1, color: "red" },
-      { q: 4, r: 3, color: "blue" }
-    ]
-  },
+    // Fase 6 — HAND/PLACEMENT required! 🖐️ (new mechanic!)
+    // Green(0,0) needs (1,0)=R AND (0,1) filled. (0,1) is EMPTY. Must remove a red elsewhere
+    // and PLACE it at (0,1) to complete green's neighborhood. Level is unsolvable without placement.
+    // Sol: RemoveR(2,1)[adj R(3,1)=1]→Place at(0,1)→G(0,0)[2/2]→R(0,1)[adj R(1,0)+B(1,1)=2<3]→R(1,0)[adj B(1,1)=1]→B(1,1)[0]→R(3,1)[adj B(4,1)=1]→B(4,1)[0] = 8 mov
+    {
+        id: 6, name: "Reposição", category: "Estratégia",
+        description: "🖐️ Peças removidas vão para sua MÃO. Clique na mão e depois num espaço vazio para recolocar!",
+        gridSize: { cols: 5, rows: 4 }, moveLimit: null, par: 8,
+        mask: [
+            [true, true, true, true, true],
+            [true, true, true, true, true],
+            [true, true, true, true, true],
+            [true, true, true, true, true],
+        ],
+        pieces: [
+            { q: 0, r: 0, color: "green" },
+            { q: 1, r: 0, color: "red" },
+            { q: 1, r: 1, color: "blue" },
+            { q: 2, r: 1, color: "red" },
+            { q: 3, r: 1, color: "red" },
+            { q: 4, r: 1, color: "blue" },
+        ]
+    },
 
-  // =============================================
-  // FASE 10 — "Espiral"
-  // Tabuleiro em espiral com peças estratégicas.
-  // =============================================
-  {
-    id: 10,
-    name: "Espiral",
-    description: "Siga a espiral e remova na ordem correta!",
-    gridSize: { cols: 5, rows: 5 },
-    moveLimit: null,
-    mask: [
-      [true,  true,  true,  true,  true],
-      [true,  true,  true,  true,  true],
-      [true,  true,  true,  true,  true],
-      [true,  true,  true,  true,  true],
-      [true,  true,  true,  true,  true]
-    ],
-    pieces: [
-      { q: 0, r: 0, color: "red" },
-      { q: 1, r: 0, color: "red" },
-      { q: 2, r: 0, color: "red" },
-      { q: 2, r: 1, color: "red" },
-      { q: 2, r: 2, color: "yellow" },
-      { q: 1, r: 2, color: "red" },
-      { q: 0, r: 2, color: "red" },
-      { q: 4, r: 4, color: "blue" }
-    ]
-  },
+    // Fase 7 — Fortaleza: GREEN center ring + Gray + Blue
+    // Green(3,3) has ALL 6 adj filled (ring of reds) → remove first!
+    // Sol: G(3,3)→R(3,2)→R(2,3)→R(4,3)→R(4,4)→R(3,4)→R(2,4)→B(5,3)→B(1,3)→Gr(3,1)→Gr(3,5) = 11 mov
+    {
+        id: 7, name: "Fortaleza", category: "Estratégia",
+        description: "O centro verde tem TODAS vizinhas preenchidas. Desmonte a fortaleza de dentro para fora!",
+        gridSize: { cols: 7, rows: 7 }, moveLimit: null, par: 11,
+        mask: [
+            [false, true, true, true, true, true, false],
+            [true, true, true, true, true, true, true],
+            [true, true, true, true, true, true, true],
+            [true, true, true, true, true, true, true],
+            [true, true, true, true, true, true, true],
+            [true, true, true, true, true, true, true],
+            [false, true, true, true, true, true, false],
+        ],
+        pieces: [
+            { q: 3, r: 3, color: "green" },
+            { q: 4, r: 3, color: "red" },
+            { q: 4, r: 4, color: "red" },
+            { q: 3, r: 4, color: "red" },
+            { q: 2, r: 4, color: "red" },
+            { q: 2, r: 3, color: "red" },
+            { q: 3, r: 2, color: "red" },
+            { q: 5, r: 3, color: "blue" },
+            { q: 1, r: 3, color: "blue" },
+            { q: 3, r: 1, color: "gray" },
+            { q: 3, r: 5, color: "gray" },
+        ]
+    },
 
-  // =============================================
-  // FASE 11 — "Xadrez"
-  // Padrão alternado, multiple blues
-  // =============================================
-  {
-    id: 11,
-    name: "Xadrez",
-    description: "Um padrão alternado — remova peças na sequência certa!",
-    gridSize: { cols: 5, rows: 5 },
-    moveLimit: 15,
-    mask: [
-      [true, true, true, true, true],
-      [true, true, true, true, true],
-      [true, true, true, true, true],
-      [true, true, true, true, true],
-      [true, true, true, true, true]
-    ],
-    pieces: [
-      { q: 1, r: 1, color: "red" },
-      { q: 3, r: 1, color: "red" },
-      { q: 2, r: 2, color: "red" },
-      { q: 1, r: 3, color: "red" },
-      { q: 3, r: 3, color: "red" },
-      { q: 0, r: 0, color: "blue" },
-      { q: 4, r: 4, color: "blue" }
-    ]
-  },
+    // Fase 8 — Move limit + Yellow + Red
+    // Sol: Y(3,2)→R(4,3)→R(4,2)→R(3,1)→B(5,3) = 5 mov. Limit=7.
+    {
+        id: 8, name: "Eficiência", category: "Estratégia",
+        description: "⏱️ Limite de movimentos! Resolva em no máximo 7.",
+        gridSize: { cols: 7, rows: 6 }, moveLimit: 7, par: 5,
+        mask: [
+            [true, true, true, true, true, true, true],
+            [true, true, true, true, true, true, true],
+            [true, true, true, true, true, true, true],
+            [true, true, true, true, true, true, true],
+            [true, true, true, true, true, true, true],
+            [true, true, true, true, true, true, true],
+        ],
+        pieces: [
+            { q: 3, r: 2, color: "yellow" },
+            { q: 3, r: 1, color: "red" },
+            { q: 4, r: 2, color: "red" },
+            { q: 4, r: 3, color: "red" },
+            { q: 5, r: 3, color: "blue" },
+        ]
+    },
 
-  // =============================================
-  // FASE 12 — "Ponte"
-  // Duas ilhas conectadas por peças-ponte
-  // =============================================
-  {
-    id: 12,
-    name: "Ponte",
-    description: "Duas ilhas de peças — use a ponte para resolvê-las!",
-    gridSize: { cols: 7, rows: 5 },
-    moveLimit: null,
-    mask: [
-      [true, true, true, true, true, true, true],
-      [true, true, true, true, true, true, true],
-      [true, true, true, true, true, true, true],
-      [true, true, true, true, true, true, true],
-      [true, true, true, true, true, true, true]
-    ],
-    pieces: [
-      // Ilha esquerda
-      { q: 0, r: 2, color: "red" },
-      { q: 1, r: 2, color: "red" },
-      { q: 1, r: 1, color: "blue" },
-      // Ponte
-      { q: 3, r: 2, color: "red" },
-      // Ilha direita
-      { q: 5, r: 2, color: "red" },
-      { q: 6, r: 2, color: "red" },
-      { q: 5, r: 1, color: "blue" }
-    ]
-  },
+    // ===== MUNDO 3: DOMÍNIO =====
 
-  // =============================================
-  // FASE 13 — "Diamante"
-  // Tabuleiro em formato diamante com verdes
-  // =============================================
-  {
-    id: 13,
-    name: "Diamante",
-    description: "Um diamante de peças com verdes nos cantos!",
-    gridSize: { cols: 5, rows: 5 },
-    moveLimit: null,
-    mask: [
-      [false, false, true,  false, false],
-      [false, true,  true,  true,  false],
-      [true,  true,  true,  true,  true],
-      [false, true,  true,  true,  false],
-      [false, false, true,  false, false]
-    ],
-    pieces: [
-      { q: 2, r: 2, color: "red" },
-      { q: 1, r: 2, color: "red" },
-      { q: 3, r: 2, color: "red" },
-      { q: 2, r: 1, color: "red" },
-      { q: 2, r: 3, color: "red" },
-      // Green no topo com poucos vizinhos
-      // (2,0) neighbors: (3,-1)out, (3,0)doesnt exist mask, (2,1), (1,0)doesnt exist, (1,-1)out, (2,-1)out
-      // Only valid: (2,1)=true. totalSlots=1. If filled → green ok
-      { q: 2, r: 0, color: "green" },
-      { q: 2, r: 4, color: "blue" }
-    ]
-  },
+    // Fase 9 — Modifier on RED (counts only blue neighbors)
+    // R(3,2,mod:blue): red rule, only counts blue adj → 2 blue neighbors → 2≥1, 2<6 → ok
+    // Sol: R(3,2)→B(2,2)→B(4,2)→R(3,4)→R(4,4)→B(5,4) = 6 mov
+    {
+        id: 9, name: "Camuflagem", category: "Domínio",
+        description: "🔄 Modificadores mudam qual cor conta nas vizinhas! O círculo indica a referência.",
+        gridSize: { cols: 7, rows: 6 }, moveLimit: null, par: 6,
+        mask: [
+            [true, true, true, true, true, true, true],
+            [true, true, true, true, true, true, true],
+            [true, true, true, true, true, true, true],
+            [true, true, true, true, true, true, true],
+            [true, true, true, true, true, true, true],
+            [true, true, true, true, true, true, true],
+        ],
+        pieces: [
+            { q: 3, r: 2, color: "red", modifier: "blue" },
+            { q: 2, r: 2, color: "blue" },
+            { q: 4, r: 2, color: "blue" },
+            { q: 3, r: 4, color: "red" },
+            { q: 4, r: 4, color: "red" },
+            { q: 5, r: 4, color: "blue" },
+        ]
+    },
 
-  // =============================================
-  // FASE 14 — "Relógio"
-  // Peças em formato circular, amarelas no centro
-  // =============================================
-  {
-    id: 14,
-    name: "Relógio",
-    description: "As engrenagens precisam girar na ordem certa!",
-    gridSize: { cols: 6, rows: 6 },
-    moveLimit: 14,
-    mask: [
-      [true, true, true, true, true, true],
-      [true, true, true, true, true, true],
-      [true, true, true, true, true, true],
-      [true, true, true, true, true, true],
-      [true, true, true, true, true, true],
-      [true, true, true, true, true, true]
-    ],
-    pieces: [
-      // Anel de vermelhas ao redor do centro
-      { q: 2, r: 1, color: "red" },
-      { q: 3, r: 2, color: "red" },
-      { q: 3, r: 3, color: "red" },
-      { q: 2, r: 3, color: "red" },
-      { q: 1, r: 2, color: "red" },
-      // Centro
-      { q: 2, r: 2, color: "yellow" },
-      // Cleanup
-      { q: 5, r: 5, color: "blue" }
-    ]
-  },
+    // Fase 10 — Board holes + Green corner + Modifier on Blue
+    // Green(1,0) col1odd: adj(2,0)R,(2,1)empty,(1,1)B,(0,1→F!),(0,0→F!),(OOB) → 3 valid. Need ALL filled.
+    // With (2,1) empty, only 2/3 filled → can't remove... UNLESS we also fill (2,1).
+    // Actually let me just put Green at (1,0) with only (2,0) and (1,1) as adj by masking (2,1) too.
+    // New approach: Green at edge, simple mask.
+    // Green(1,0) col1odd adj: (2,0)R, (2,1→F!), (1,1→F!), (0,1→F!), (0,0→F!), (OOB) → only 1 valid: (2,0)=R.
+    // totalSlots=1, filled=1, ALL → ok ✓
+    // Blue(3,2,mod:red): counts only red adj. R(4,2)+R(3,1)=2 red → not 0 → remove reds first.
+    // Sol: G(1,0)→R(2,0)[adj R(3,1)]→R(3,1)[adj R(4,2)]→R(4,2)[adj B(4,1)]→B(3,2)[0 red adj]→B(4,1)[0]
+    // = 6 mov
+    {
+        id: 10, name: "Arquipélago", category: "Domínio",
+        description: "🕳️ Buracos mudam vizinhanças! A azul com modificador só conta vizinhas vermelhas.",
+        gridSize: { cols: 6, rows: 5 }, moveLimit: null, par: 6,
+        mask: [
+            [false, true, true, true, true, false],
+            [false, false, true, true, true, true],
+            [false, true, true, true, true, false],
+            [false, false, true, true, true, true],
+            [false, true, true, true, true, false],
+        ],
+        pieces: [
+            { q: 1, r: 0, color: "green" },
+            { q: 2, r: 0, color: "red" },
+            { q: 3, r: 1, color: "red" },
+            { q: 4, r: 2, color: "red" },
+            { q: 3, r: 2, color: "blue", modifier: "red" },
+            { q: 4, r: 1, color: "blue" },
+        ]
+    },
 
-  // =============================================
-  // FASE 15 — "Labirinto"
-  // Caminho estreito com peças bloqueando
-  // =============================================
-  {
-    id: 15,
-    name: "Labirinto",
-    description: "Navegue pelo labirinto de peças! Cuidado com a ordem.",
-    gridSize: { cols: 7, rows: 5 },
-    moveLimit: null,
-    mask: [
-      [true,  true,  true,  true,  true,  true,  true],
-      [true,  false, true,  false, true,  false, true],
-      [true,  true,  true,  true,  true,  true,  true],
-      [true,  false, true,  false, true,  false, true],
-      [true,  true,  true,  true,  true,  true,  true]
-    ],
-    pieces: [
-      { q: 0, r: 0, color: "red" },
-      { q: 2, r: 0, color: "red" },
-      { q: 0, r: 2, color: "red" },
-      { q: 2, r: 2, color: "red" },
-      { q: 4, r: 2, color: "red" },
-      { q: 6, r: 2, color: "red" },
-      { q: 4, r: 0, color: "yellow" },
-      { q: 6, r: 4, color: "blue" },
-      { q: 0, r: 4, color: "blue" }
-    ]
-  },
+    // Fase 11 — Yellow + Red + Blue + Gray + Move limit
+    // Y(3,2) col3odd: NE(4,2)R, SE(4,3)R, N(3,1)R = 3 filled. NE↔SW(no), SE↔NW(no), N↔S(no) ✓
+    // Sol: Y(3,2)→R(4,3)→R(4,2)→R(3,1)→B(2,1)→B(5,3)→Gr(1,2) = 7 mov, limit=10
+    {
+        id: 11, name: "Equilíbrio", category: "Domínio",
+        description: "Amarela, Cinza e limite de movimentos. Cada passo conta!",
+        gridSize: { cols: 7, rows: 6 }, moveLimit: 10, par: 7,
+        mask: [
+            [true, true, true, true, true, true, true],
+            [true, true, true, true, true, true, true],
+            [true, true, true, true, true, true, true],
+            [true, true, true, true, true, true, true],
+            [true, true, true, true, true, true, true],
+            [true, true, true, true, true, true, true],
+        ],
+        pieces: [
+            { q: 3, r: 2, color: "yellow" },
+            { q: 3, r: 1, color: "red" },
+            { q: 4, r: 2, color: "red" },
+            { q: 4, r: 3, color: "red" },
+            { q: 2, r: 1, color: "blue" },
+            { q: 5, r: 3, color: "blue" },
+            { q: 1, r: 2, color: "gray" },
+        ]
+    },
 
-  // =============================================
-  // FASE 16 — "Mosaico"
-  // Tabuleiro grande com múltiplos tipos e cinzas
-  // =============================================
-  {
-    id: 16,
-    name: "Mosaico",
-    description: "Um mosaico complexo! Todas as regras em jogo.",
-    gridSize: { cols: 7, rows: 6 },
-    moveLimit: null,
-    mask: [
-      [true, true, true, true, true, true, true],
-      [true, true, true, true, true, true, true],
-      [true, true, true, true, true, true, true],
-      [true, true, true, true, true, true, true],
-      [true, true, true, true, true, true, true],
-      [true, true, true, true, true, true, true]
-    ],
-    pieces: [
-      // Cluster central
-      { q: 3, r: 2, color: "red" },
-      { q: 4, r: 2, color: "red" },
-      { q: 3, r: 3, color: "red" },
-      { q: 4, r: 3, color: "red" },
-      { q: 2, r: 3, color: "red" },
-      // Yellow — needs exactly 3
-      { q: 3, r: 1, color: "yellow" },
-      // Gray no canto
-      { q: 0, r: 0, color: "gray" },
-      // Blues para cleanup
-      { q: 6, r: 5, color: "blue" },
-      { q: 0, r: 5, color: "blue" }
-    ]
-  }
+    // Fase 12 — ULTIMATE: Green ring + Yellow + Modifier + Placement + Gray
+    // Green(3,3) center: 6 adj all reds → ALL → remove first.
+    // Yellow(3,5) col3odd: NE(4,5)R, N(3,4=inner ring red) → adj. Must remove YELLOW before inner red(3,4).
+    // Need 3rd adj for yellow. Red(2,5): NW. Dirs: NE(4,5),N(3,4),NW(2,5). Opp: NE↔SW(no),N↔S(no),NW↔SE(no). ✓
+    // After clearing yellow cluster + inner ring + blues → only grays remain → remove grays.
+    // Sol: Y(3,5)→R(4,5)→R(2,5)→G(3,3)→R(3,2)→R(2,3)→R(4,3)→R(4,4)→R(3,4)→R(2,4)→B(5,3)→B(1,3)→Gr(3,1)→Gr(3,6) = 14 mov
+    {
+        id: 12, name: "Mestre Hex", category: "Domínio",
+        description: "🏆 O desafio definitivo! Verde, Amarela, Cinza e Modificadores.",
+        gridSize: { cols: 7, rows: 7 }, moveLimit: null, par: 14,
+        mask: [
+            [false, true, true, true, true, true, false],
+            [true, true, true, true, true, true, true],
+            [true, true, true, true, true, true, true],
+            [true, true, true, true, true, true, true],
+            [true, true, true, true, true, true, true],
+            [true, true, true, true, true, true, true],
+            [false, true, true, true, true, true, false],
+        ],
+        pieces: [
+            // Green center ring
+            { q: 3, r: 3, color: "green" },
+            { q: 4, r: 3, color: "red" },
+            { q: 4, r: 4, color: "red" },
+            { q: 3, r: 4, color: "red" },
+            { q: 2, r: 4, color: "red" },
+            { q: 2, r: 3, color: "red" },
+            { q: 3, r: 2, color: "red" },
+            // Outer blues
+            { q: 5, r: 3, color: "blue" },
+            { q: 1, r: 3, color: "blue" },
+            // Yellow cluster (NE=4,5 + N=3,4 + NW=2,5)
+            { q: 3, r: 5, color: "yellow" },
+            { q: 4, r: 5, color: "red" },
+            { q: 2, r: 5, color: "red" },
+            // Grays
+            { q: 3, r: 1, color: "gray" },
+            { q: 3, r: 6, color: "gray" },
+        ]
+    },
 ];

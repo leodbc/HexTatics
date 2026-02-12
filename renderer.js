@@ -1,441 +1,427 @@
-// renderer.js — Renderização do jogo no Canvas
-// Classe Renderer com suporte a touch e melhor visual
+// renderer.js — Renderizador Canvas para HexTatics
+// Hexágonos flat-top, odd-q offset. Suporte a touch, tooltips, partículas.
 
 class Renderer {
-  constructor(canvas, game) {
-    this.canvas = canvas;
-    this.ctx = canvas.getContext('2d');
-    this.game = game;
+    constructor(canvas, game) {
+        this.canvas = canvas;
+        this.ctx = canvas.getContext("2d");
+        this.game = game;
 
-    this.hexSize = 30;
-    this.offsetX = 0;
-    this.offsetY = 0;
+        // Layout (recalculado em _resize)
+        this.hexSize = 36; // "raio" do hex (centro à ponta)
+        this.offsetX = 0;
+        this.offsetY = 0;
 
-    this.hoverHex = null;
-    this.mouseX = 0;
-    this.mouseY = 0;
+        // Estado de interação
+        this.hoveredCell = null;
+        this.placementMode = false;
+        this.animations = new Map();
+        this.particles = [];
 
-    this.animations = [];
-    this.hexCenters = new Map();
-    this.dpr = window.devicePixelRatio || 1;
+        this._resize();
+    }
 
-    // Paleta de cores atualizada
-    this.colors = {
-      background: '#0d1117',
-      hexEmpty: 'rgba(33, 38, 45, 0.6)',
-      hexEmptyBorder: 'rgba(48, 54, 61, 0.8)',
-      red: '#e5534b',
-      blue: '#388bfd',
-      green: '#3fb950',
-      yellow: '#d29922',
-      gray: '#6e7681',
-      canRemove: 'rgba(63, 185, 80, 0.5)',
-      cantRemove: 'rgba(248, 81, 73, 0.35)',
-      placeHighlight: 'rgba(63, 185, 80, 0.25)',
-      placeDot: 'rgba(63, 185, 80, 0.6)'
-    };
+    // ===================== LAYOUT =====================
 
-    this.resize();
-    this._animate = this._animate.bind(this);
-    requestAnimationFrame(this._animate);
-  }
+    _resize() {
+        const area = this.canvas.parentElement;
+        const dpr = window.devicePixelRatio || 1;
+        const w = area.clientWidth;
+        const h = area.clientHeight;
 
-  // ==========================================
-  // Redimensionamento
-  // ==========================================
+        this.canvas.width = w * dpr;
+        this.canvas.height = h * dpr;
+        this.canvas.style.width = w + "px";
+        this.canvas.style.height = h + "px";
+        this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
-  resize() {
-    const container = this.canvas.parentElement;
-    if (!container) return;
+        this.displayWidth = w;
+        this.displayHeight = h;
 
-    const rect = container.getBoundingClientRect();
-    this.dpr = window.devicePixelRatio || 1;
+        this._computeLayout();
+    }
 
-    this.canvas.width = rect.width * this.dpr;
-    this.canvas.height = rect.height * this.dpr;
-    this.canvas.style.width = rect.width + 'px';
-    this.canvas.style.height = rect.height + 'px';
+    _computeLayout() {
+        const g = this.game;
+        if (!g.gridSize || g.gridSize.cols === 0) return;
 
-    this.displayWidth = rect.width;
-    this.displayHeight = rect.height;
+        const { cols, rows } = g.gridSize;
+        const baseSize = 36;
 
-    if (!this.game.currentLevel) return;
+        // Flat-top hex:
+        //   width = 2 * size (ponta a ponta horizontal)
+        //   height = sqrt(3) * size (flat edge to flat edge vertical)
+        //   horiz spacing = 3/2 * size between column centers
+        //   vert spacing = sqrt(3) * size between row centers
+        //   odd columns shifted down by sqrt(3)/2 * size
 
-    const cols = this.game.cols;
-    const rows = this.game.rows;
+        const gridW = (cols - 1) * (3 / 2 * baseSize) + 2 * baseSize;
+        const gridH = rows * (Math.sqrt(3) * baseSize) + (Math.sqrt(3) / 2 * baseSize);
 
-    const maxWidth = this.displayWidth - 40;
-    const maxHeight = this.displayHeight - 40;
+        // Fit to screen with padding
+        const padX = 30;
+        const padY = 30;
+        const scaleX = (this.displayWidth - padX * 2) / gridW;
+        const scaleY = (this.displayHeight - padY * 2) / gridH;
+        const scale = Math.min(scaleX, scaleY, 1.8);
 
-    const sizeByWidth = maxWidth / (cols * 1.5 + 0.5);
-    const sizeByHeight = maxHeight / ((rows + 0.5) * Math.sqrt(3));
+        this.hexSize = baseSize * scale;
 
-    this.hexSize = Math.min(sizeByWidth, sizeByHeight, 50);
-    this.hexSize = Math.max(this.hexSize, 18);
+        // Recompute grid dimensions with actual size
+        const size = this.hexSize;
+        const actualGridW = (cols - 1) * (3 / 2 * size) + 2 * size;
+        const actualGridH = rows * (Math.sqrt(3) * size) + (Math.sqrt(3) / 2 * size);
 
-    const totalWidth = (cols * 1.5 + 0.5) * this.hexSize;
-    const totalHeight = (rows + 0.5) * Math.sqrt(3) * this.hexSize;
+        this.offsetX = (this.displayWidth - actualGridW) / 2 + size;
+        this.offsetY = (this.displayHeight - actualGridH) / 2 + (Math.sqrt(3) / 2 * size);
+    }
 
-    this.offsetX = (this.displayWidth - totalWidth) / 2 + this.hexSize;
-    this.offsetY = (this.displayHeight - totalHeight) / 2 + this.hexSize * Math.sqrt(3) / 2;
+    // ===================== HEX MATH =====================
+    // Flat-top, odd-q offset:
+    //   x = size * 3/2 * q
+    //   y = sqrt(3) * size * (r + 0.5 * (q & 1))
 
-    this._calculateHexCenters();
-  }
+    hexToPixel(q, r) {
+        const size = this.hexSize;
+        const x = this.offsetX + size * 1.5 * q;
+        const y = this.offsetY + Math.sqrt(3) * size * (r + 0.5 * (q & 1));
+        return { x, y };
+    }
 
-  _calculateHexCenters() {
-    this.hexCenters.clear();
-    for (let r = 0; r < this.game.rows; r++) {
-      for (let q = 0; q < this.game.cols; q++) {
-        const key = `${q},${r}`;
-        if (this.game.mask.get(key)) {
-          const center = this._hexToPixel(q, r);
-          this.hexCenters.set(key, center);
+    pixelToHex(px, py) {
+        const game = this.game;
+        let closest = null;
+        let minDist = Infinity;
+
+        for (let r = 0; r < game.gridSize.rows; r++) {
+            for (let q = 0; q < game.gridSize.cols; q++) {
+                if (!game.cellExists(q, r)) continue;
+                const { x, y } = this.hexToPixel(q, r);
+                const dx = px - x, dy = py - y;
+                const dist = dx * dx + dy * dy;
+                if (dist < minDist && dist < this.hexSize * this.hexSize * 1.2) {
+                    minDist = dist;
+                    closest = { q, r };
+                }
+            }
         }
-      }
-    }
-  }
-
-  // ==========================================
-  // Coordenadas hex ↔ pixel
-  // ==========================================
-
-  _hexToPixel(q, r) {
-    const size = this.hexSize;
-    const x = this.offsetX + q * size * 1.5;
-    const y = this.offsetY + r * size * Math.sqrt(3) + (q % 2 === 1 ? size * Math.sqrt(3) / 2 : 0);
-    return { x, y };
-  }
-
-  pixelToHex(px, py) {
-    let bestKey = null;
-    let bestDist = Infinity;
-
-    for (const [key, center] of this.hexCenters) {
-      const dx = px - center.x;
-      const dy = py - center.y;
-      const dist = dx * dx + dy * dy;
-
-      if (dist < bestDist) {
-        bestDist = dist;
-        bestKey = key;
-      }
+        return closest;
     }
 
-    if (bestKey && bestDist < this.hexSize * this.hexSize * 1.1) {
-      const [q, r] = bestKey.split(',').map(Number);
-      if (this._pointInHex(px, py, this.hexCenters.get(bestKey))) {
-        return { q, r };
-      }
+    // ===================== DRAWING =====================
+
+    draw() {
+        const ctx = this.ctx;
+        ctx.clearRect(0, 0, this.displayWidth, this.displayHeight);
+
+        const game = this.game;
+        if (!game.gridSize || game.gridSize.cols === 0) return;
+
+        this._updateParticles();
+
+        // Draw cells
+        for (let r = 0; r < game.gridSize.rows; r++) {
+            for (let q = 0; q < game.gridSize.cols; q++) {
+                if (!game.cellExists(q, r)) continue;
+                this._drawCell(q, r);
+            }
+        }
+
+        // Draw particles on top
+        this._drawParticles();
     }
 
-    return null;
-  }
-
-  _pointInHex(px, py, center) {
-    const size = this.hexSize;
-    const dx = Math.abs(px - center.x);
-    const dy = Math.abs(py - center.y);
-
-    if (dx > size || dy > size * Math.sqrt(3) / 2) return false;
-    return dy <= Math.sqrt(3) / 2 * (2 * size - 2 * dx);
-  }
-
-  // ==========================================
-  // Conversão de coordenadas touch/mouse → canvas
-  // ==========================================
-
-  getCanvasCoords(clientX, clientY) {
-    const rect = this.canvas.getBoundingClientRect();
-    const x = clientX - rect.left;
-    const y = clientY - rect.top;
-    return { x, y };
-  }
-
-  // ==========================================
-  // Desenho
-  // ==========================================
-
-  _drawHex(cx, cy, size, fillColor, strokeColor, lineWidth = 2) {
-    const ctx = this.ctx;
-    ctx.beginPath();
-    for (let i = 0; i < 6; i++) {
-      const angle = Math.PI / 3 * i;
-      const x = cx + size * Math.cos(angle);
-      const y = cy + size * Math.sin(angle);
-      if (i === 0) ctx.moveTo(x, y);
-      else ctx.lineTo(x, y);
-    }
-    ctx.closePath();
-    ctx.fillStyle = fillColor;
-    ctx.fill();
-    ctx.strokeStyle = strokeColor;
-    ctx.lineWidth = lineWidth;
-    ctx.stroke();
-  }
-
-  _drawHexRounded(cx, cy, size, fillColor, strokeColor, lineWidth = 2) {
-    const ctx = this.ctx;
-    const corners = [];
-    for (let i = 0; i < 6; i++) {
-      const angle = Math.PI / 3 * i;
-      corners.push({
-        x: cx + size * Math.cos(angle),
-        y: cy + size * Math.sin(angle)
-      });
-    }
-
-    const r = size * 0.08; // radius of rounding
-    ctx.beginPath();
-    for (let i = 0; i < 6; i++) {
-      const curr = corners[i];
-      const next = corners[(i + 1) % 6];
-      const prev = corners[(i + 5) % 6];
-
-      const dx1 = curr.x - prev.x;
-      const dy1 = curr.y - prev.y;
-      const d1 = Math.sqrt(dx1 * dx1 + dy1 * dy1);
-      const dx2 = next.x - curr.x;
-      const dy2 = next.y - curr.y;
-      const d2 = Math.sqrt(dx2 * dx2 + dy2 * dy2);
-
-      const p1x = curr.x - (dx1 / d1) * r;
-      const p1y = curr.y - (dy1 / d1) * r;
-      const p2x = curr.x + (dx2 / d2) * r;
-      const p2y = curr.y + (dy2 / d2) * r;
-
-      if (i === 0) ctx.moveTo(p1x, p1y);
-      else ctx.lineTo(p1x, p1y);
-      ctx.quadraticCurveTo(curr.x, curr.y, p2x, p2y);
-    }
-    ctx.closePath();
-    ctx.fillStyle = fillColor;
-    ctx.fill();
-    ctx.strokeStyle = strokeColor;
-    ctx.lineWidth = lineWidth;
-    ctx.stroke();
-  }
-
-  _drawModifier(cx, cy, modifierColor) {
-    const ctx = this.ctx;
-    const radius = this.hexSize * 0.22;
-    ctx.beginPath();
-    ctx.arc(cx, cy, radius, 0, Math.PI * 2);
-    ctx.fillStyle = this.colors[modifierColor] || modifierColor;
-    ctx.fill();
-    ctx.strokeStyle = 'rgba(0,0,0,0.4)';
-    ctx.lineWidth = 1.5;
-    ctx.stroke();
-  }
-
-  _drawPieceSymbol(cx, cy, piece) {
-    const ctx = this.ctx;
-    const size = this.hexSize;
-
-    let symbol = '';
-    switch (piece.color) {
-      case 'red': symbol = 'R'; break;
-      case 'blue': symbol = 'B'; break;
-      case 'green': symbol = 'G'; break;
-      case 'yellow': symbol = 'Y'; break;
-      case 'gray': symbol = '▪'; break;
-    }
-
-    ctx.fillStyle = piece.color === 'yellow' ? '#1a1a1a' : '#ffffff';
-    ctx.font = `bold ${Math.max(size * 0.48, 11)}px -apple-system, BlinkMacSystemFont, "Segoe UI", Arial`;
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-
-    if (piece.modifier) {
-      ctx.fillText(symbol, cx, cy - size * 0.12);
-    } else {
-      ctx.fillText(symbol, cx, cy);
-    }
-  }
-
-  // ==========================================
-  // Loop de renderização
-  // ==========================================
-
-  _animate() {
-    this.draw();
-    this._updateAnimations();
-    requestAnimationFrame(this._animate);
-  }
-
-  draw() {
-    const ctx = this.ctx;
-
-    // Reset transform and clear
-    ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
-    ctx.clearRect(0, 0, this.displayWidth, this.displayHeight);
-
-    if (!this.game.currentLevel) return;
-
-    for (let r = 0; r < this.game.rows; r++) {
-      for (let q = 0; q < this.game.cols; q++) {
-        const key = `${q},${r}`;
-        if (!this.game.mask.get(key)) continue;
-
-        const center = this.hexCenters.get(key);
-        if (!center) continue;
-
+    _drawCell(q, r) {
+        const ctx = this.ctx;
+        const { x, y } = this.hexToPixel(q, r);
+        const size = this.hexSize;
         const piece = this.game.getPiece(q, r);
-        const isHover = this.hoverHex && this.hoverHex.q === q && this.hoverHex.r === r;
+        const isHovered = this.hoveredCell && this.hoveredCell.q === q && this.hoveredCell.r === r;
+        const anim = this.animations.get(`${q},${r}`);
+
+        // Animation alpha
+        let alpha = 1;
+        if (anim) {
+            const progress = (Date.now() - anim.start) / anim.duration;
+            if (progress >= 1) {
+                this.animations.delete(`${q},${r}`);
+            } else if (anim.type === "fadeOut") {
+                alpha = 1 - progress;
+            } else if (anim.type === "fadeIn") {
+                alpha = progress;
+            }
+        }
+
+        ctx.save();
+        ctx.globalAlpha = alpha;
+
+        // Hex background
+        this._drawHexPath(x, y, size);
 
         if (piece) {
-          const fillColor = this.colors[piece.color] || '#888888';
-          const alpha = this._getAnimationAlpha(key);
+            // Piece colors
+            const colors = {
+                red: "#CC2222", blue: "#2244BB", green: "#1D8C1D",
+                yellow: "#CCAA00", gray: "#555555",
+            };
 
-          if (alpha < 1) ctx.globalAlpha = alpha;
-
-          // Draw piece hex with subtle shadow
-          ctx.shadowColor = 'rgba(0,0,0,0.3)';
-          ctx.shadowBlur = this.hexSize * 0.15;
-          ctx.shadowOffsetY = this.hexSize * 0.05;
-          this._drawHexRounded(center.x, center.y, this.hexSize * 0.92, fillColor, 'rgba(0,0,0,0.2)', 1.5);
-          ctx.shadowColor = 'transparent';
-          ctx.shadowBlur = 0;
-          ctx.shadowOffsetY = 0;
-
-          // Inner highlight
-          const grad = ctx.createRadialGradient(
-            center.x - this.hexSize * 0.15, center.y - this.hexSize * 0.2,
-            0,
-            center.x, center.y,
-            this.hexSize * 0.9
-          );
-          grad.addColorStop(0, 'rgba(255,255,255,0.15)');
-          grad.addColorStop(1, 'rgba(0,0,0,0.1)');
-          this._drawHexRounded(center.x, center.y, this.hexSize * 0.88, grad, 'transparent', 0);
-
-          this._drawPieceSymbol(center.x, center.y, piece);
-
-          if (piece.modifier) {
-            this._drawModifier(center.x, center.y + this.hexSize * 0.22, piece.modifier);
-          }
-
-          ctx.globalAlpha = 1;
-
-          // Hover highlight
-          if (isHover && this.game.state === 'playing' && this.game.selectedHandPiece === null) {
-            const canRemove = this.game.canRemove(q, r);
-            const highlightColor = canRemove ? this.colors.canRemove : this.colors.cantRemove;
-            this._drawHexRounded(center.x, center.y, this.hexSize * 0.95, 'transparent', highlightColor, 3);
-          }
-        } else {
-          // Empty cell
-          let emptyFill = this.colors.hexEmpty;
-          let emptyBorder = this.colors.hexEmptyBorder;
-
-          if (this.game.selectedHandPiece !== null && this.game.state === 'playing') {
-            if (isHover && this.game.canPlaceAt(q, r)) {
-              emptyFill = this.colors.placeHighlight;
-              emptyBorder = 'rgba(63, 185, 80, 0.5)';
-            }
-          }
-
-          this._drawHexRounded(center.x, center.y, this.hexSize * 0.92, emptyFill, emptyBorder, 1);
-
-          // Placement dots
-          if (this.game.selectedHandPiece !== null && this.game.canPlaceAt(q, r)) {
-            ctx.beginPath();
-            ctx.arc(center.x, center.y, Math.max(3, this.hexSize * 0.08), 0, Math.PI * 2);
-            ctx.fillStyle = this.colors.placeDot;
+            ctx.fillStyle = colors[piece.color] || "#555";
             ctx.fill();
-          }
+
+            // Highlight on hover
+            if (isHovered) {
+                const canRemove = this.game.canRemove(q, r);
+                ctx.strokeStyle = canRemove ? "#00ff88" : "#ff4444";
+                ctx.lineWidth = 3;
+                ctx.stroke();
+
+                // Outer glow
+                ctx.save();
+                ctx.shadowColor = canRemove ? "#00ff88" : "#ff4444";
+                ctx.shadowBlur = 15;
+                this._drawHexPath(x, y, size);
+                ctx.stroke();
+                ctx.restore();
+            } else {
+                ctx.strokeStyle = "rgba(255,255,255,0.12)";
+                ctx.lineWidth = 1;
+                ctx.stroke();
+            }
+
+            // Piece symbol
+            ctx.fillStyle = "rgba(255,255,255,0.85)";
+            ctx.font = `bold ${Math.max(size * 0.45, 10)}px 'Segoe UI', system-ui, sans-serif`;
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+            const symbols = { red: "♦", blue: "●", green: "■", yellow: "▲", gray: "▬" };
+            ctx.fillText(symbols[piece.color] || "?", x, y);
+
+            // Modifier dot
+            if (piece.modifier) {
+                const modColors = {
+                    red: "#FF4444", blue: "#4488FF", green: "#44DD44",
+                    yellow: "#FFDD44", gray: "#AAAAAA",
+                };
+                const dotR = Math.max(size * 0.16, 4);
+                ctx.beginPath();
+                ctx.arc(x + size * 0.35, y - size * 0.35, dotR, 0, Math.PI * 2);
+                ctx.fillStyle = modColors[piece.modifier] || "#fff";
+                ctx.fill();
+                ctx.strokeStyle = "#000";
+                ctx.lineWidth = 1.5;
+                ctx.stroke();
+            }
+        } else {
+            // Empty cell
+            if (this.placementMode && isHovered) {
+                ctx.fillStyle = "rgba(0, 255, 136, 0.12)";
+                ctx.fill();
+                ctx.strokeStyle = "rgba(0, 255, 136, 0.4)";
+                ctx.lineWidth = 2;
+                ctx.setLineDash([4, 4]);
+                ctx.stroke();
+                ctx.setLineDash([]);
+            } else {
+                ctx.fillStyle = "rgba(255, 255, 255, 0.03)";
+                ctx.fill();
+                ctx.strokeStyle = "rgba(255, 255, 255, 0.08)";
+                ctx.lineWidth = 1;
+                ctx.stroke();
+            }
         }
-      }
+
+        ctx.restore();
     }
 
-    this._drawAnimations();
-  }
-
-  // ==========================================
-  // Animações
-  // ==========================================
-
-  addFadeOut(q, r, piece) {
-    const key = `${q},${r}`;
-    const center = this.hexCenters.get(key);
-    if (!center) return;
-
-    this.animations.push({
-      type: 'fadeOut',
-      key,
-      piece: { ...piece },
-      cx: center.x,
-      cy: center.y,
-      startTime: performance.now(),
-      duration: 250,
-      alpha: 1
-    });
-  }
-
-  addFadeIn(q, r) {
-    const key = `${q},${r}`;
-    this.animations.push({
-      type: 'fadeIn',
-      key,
-      startTime: performance.now(),
-      duration: 250
-    });
-  }
-
-  _updateAnimations() {
-    const now = performance.now();
-    this.animations = this.animations.filter(anim => {
-      const elapsed = now - anim.startTime;
-      return elapsed < anim.duration;
-    });
-  }
-
-  _drawAnimations() {
-    const ctx = this.ctx;
-    const now = performance.now();
-
-    for (const anim of this.animations) {
-      const elapsed = now - anim.startTime;
-      const progress = Math.min(elapsed / anim.duration, 1);
-
-      if (anim.type === 'fadeOut') {
-        const alpha = 1 - progress;
-        const eased = 1 - Math.pow(progress, 2);
-        ctx.globalAlpha = alpha;
-        const fillColor = this.colors[anim.piece.color] || '#888';
-        const scale = 1 + progress * 0.15;
-        this._drawHexRounded(anim.cx, anim.cy, this.hexSize * 0.92 * scale, fillColor, 'rgba(0,0,0,0.2)', 1.5);
-        this._drawPieceSymbol(anim.cx, anim.cy, anim.piece);
-        if (anim.piece.modifier) {
-          this._drawModifier(anim.cx, anim.cy + this.hexSize * 0.22, anim.piece.modifier);
+    // Flat-top hexagon: first vertex at 0° (right), going counter-clockwise
+    _drawHexPath(x, y, size) {
+        const ctx = this.ctx;
+        ctx.beginPath();
+        for (let i = 0; i < 6; i++) {
+            const angle = Math.PI / 3 * i; // 0, 60, 120, 180, 240, 300 degrees
+            const px = x + size * Math.cos(angle);
+            const py = y + size * Math.sin(angle);
+            if (i === 0) ctx.moveTo(px, py);
+            else ctx.lineTo(px, py);
         }
-        ctx.globalAlpha = 1;
-      }
+        ctx.closePath();
     }
-  }
 
-  _getAnimationAlpha(key) {
-    const now = performance.now();
-    for (const anim of this.animations) {
-      if (anim.type === 'fadeIn' && anim.key === key) {
-        const elapsed = now - anim.startTime;
-        const t = Math.min(elapsed / anim.duration, 1);
-        return t * t * (3 - 2 * t); // smoothstep
-      }
+    // ===================== ANIMATIONS =====================
+
+    addAnimation(q, r, type, duration) {
+        this.animations.set(`${q},${r}`, {
+            type, duration, start: Date.now(),
+        });
     }
-    return 1;
-  }
 
-  // ==========================================
-  // Hover
-  // ==========================================
+    // ===================== PARTICLES =====================
 
-  updateHover(x, y) {
-    this.mouseX = x;
-    this.mouseY = y;
-    this.hoverHex = this.pixelToHex(x, y);
-  }
+    spawnRemoveParticles(q, r, color) {
+        const { x, y } = this.hexToPixel(q, r);
+        const colors = {
+            red: "#ff4444", blue: "#4488ff", green: "#44dd44",
+            yellow: "#ffdd44", gray: "#aaaaaa",
+        };
+        const c = colors[color] || "#ffffff";
 
-  clearHover() {
-    this.hoverHex = null;
-  }
+        for (let i = 0; i < 8; i++) {
+            const angle = (Math.PI * 2 / 8) * i + Math.random() * 0.5;
+            const speed = 1.5 + Math.random() * 2;
+            this.particles.push({
+                x, y,
+                vx: Math.cos(angle) * speed,
+                vy: Math.sin(angle) * speed,
+                life: 1,
+                decay: 0.02 + Math.random() * 0.02,
+                size: 2 + Math.random() * 3,
+                color: c,
+            });
+        }
+    }
+
+    _updateParticles() {
+        for (let i = this.particles.length - 1; i >= 0; i--) {
+            const p = this.particles[i];
+            p.x += p.vx;
+            p.y += p.vy;
+            p.vy += 0.05;
+            p.life -= p.decay;
+            if (p.life <= 0) this.particles.splice(i, 1);
+        }
+    }
+
+    _drawParticles() {
+        const ctx = this.ctx;
+        for (const p of this.particles) {
+            ctx.save();
+            ctx.globalAlpha = p.life;
+            ctx.fillStyle = p.color;
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
+        }
+    }
+
+    // ==================== EDITOR RENDERING ====================
+
+    drawEditor(editor, hoveredCell) {
+        const ctx = this.ctx;
+        const dpr = window.devicePixelRatio || 1;
+        const w = this.displayWidth;
+        const h = this.displayHeight;
+
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        ctx.clearRect(0, 0, w, h);
+
+        // Background with subtle grid
+        ctx.fillStyle = "#0a0a18";
+        ctx.fillRect(0, 0, w, h);
+        ctx.strokeStyle = "rgba(15,52,96,0.12)";
+        ctx.lineWidth = 0.5;
+        for (let i = 0; i < w; i += 40) { ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, h); ctx.stroke(); }
+        for (let i = 0; i < h; i += 40) { ctx.beginPath(); ctx.moveTo(0, i); ctx.lineTo(w, i); ctx.stroke(); }
+
+        // Compute hex layout
+        const cols = editor.cols, rows = editor.rows;
+        const gridW = 1.5 * (cols - 1) + 2;
+        const gridH = Math.sqrt(3) * (rows + 0.5);
+        const pad = 20;
+        const hexSize = Math.min((w - 2 * pad) / gridW, (h - 2 * pad) / gridH, 45);
+
+        const totalW = gridW * hexSize;
+        const totalH = gridH * hexSize;
+        const ox = (w - totalW) / 2 + hexSize;
+        const oy = (h - totalH) / 2 + hexSize * Math.sqrt(3) / 2;
+
+        this._editorHexSize = hexSize;
+        this._editorOX = ox;
+        this._editorOY = oy;
+
+        const COLORS = { red: "#DD2222", blue: "#2244CC", green: "#22AA22", yellow: "#EECC00", gray: "#999999" };
+        const SYMBOLS = { red: "♦", blue: "●", green: "■", yellow: "▲", gray: "▬" };
+
+        for (let r = 0; r < rows; r++) {
+            for (let q = 0; q < cols; q++) {
+                const x = ox + hexSize * 1.5 * q;
+                const y = oy + hexSize * Math.sqrt(3) * (r + 0.5 * (q & 1));
+                const isMasked = !editor.mask[r] || !editor.mask[r][q];
+                const key = `${q},${r}`;
+                const piece = editor.pieces.get(key);
+                const isHov = hoveredCell && hoveredCell.q === q && hoveredCell.r === r;
+
+                this._drawHexPath(x, y, hexSize - 2);
+
+                // Fill
+                if (isMasked) {
+                    ctx.fillStyle = "rgba(10,10,20,0.85)";
+                } else if (piece) {
+                    const c = COLORS[piece.color] || "#666";
+                    ctx.fillStyle = isHov ? c + "cc" : c + "99";
+                } else {
+                    ctx.fillStyle = isHov ? "rgba(0,255,136,0.12)" : "rgba(26,26,62,0.5)";
+                }
+                ctx.fill();
+
+                // Border
+                ctx.strokeStyle = isHov ? "#00ff88" : (isMasked ? "rgba(30,30,60,0.5)" : "#0f3460");
+                ctx.lineWidth = isHov ? 2.5 : 1;
+                ctx.stroke();
+
+                // Piece symbol
+                if (piece && !isMasked) {
+                    ctx.fillStyle = "rgba(255,255,255,0.85)";
+                    ctx.font = `bold ${hexSize * 0.45}px system-ui`;
+                    ctx.textAlign = "center";
+                    ctx.textBaseline = "middle";
+                    const sy = piece.modifier ? y - hexSize * 0.1 : y;
+                    ctx.fillText(SYMBOLS[piece.color] || "?", x, sy);
+
+                    // Modifier dot
+                    if (piece.modifier) {
+                        const dotY = y + hexSize * 0.25;
+                        ctx.beginPath();
+                        ctx.arc(x, dotY, hexSize * 0.15, 0, Math.PI * 2);
+                        ctx.fillStyle = COLORS[piece.modifier];
+                        ctx.fill();
+                        ctx.strokeStyle = "#000";
+                        ctx.lineWidth = 1.5;
+                        ctx.stroke();
+                    }
+                }
+
+                // Coord label (small, dimmed)
+                if (!isMasked) {
+                    ctx.fillStyle = "rgba(255,255,255,0.12)";
+                    ctx.font = `${Math.max(8, hexSize * 0.2)}px system-ui`;
+                    ctx.textAlign = "center";
+                    ctx.textBaseline = "bottom";
+                    ctx.fillText(`${q},${r}`, x, y + hexSize * Math.sqrt(3) / 2 - 2);
+                }
+            }
+        }
+    }
+
+    editorPixelToHex(px, py, editor) {
+        const s = this._editorHexSize;
+        const ox = this._editorOX;
+        const oy = this._editorOY;
+        if (!s) return null;
+
+        let closest = null;
+        let minDist = Infinity;
+        for (let r = 0; r < editor.rows; r++) {
+            for (let q = 0; q < editor.cols; q++) {
+                const x = ox + s * 1.5 * q;
+                const y = oy + s * Math.sqrt(3) * (r + 0.5 * (q & 1));
+                const d = Math.hypot(px - x, py - y);
+                if (d < minDist && d < s * 0.9) {
+                    minDist = d;
+                    closest = { q, r };
+                }
+            }
+        }
+        return closest;
+    }
 }

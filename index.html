@@ -1,625 +1,813 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="mobile-web-app-capable" content="yes">
-  <meta name="theme-color" content="#0d1117">
-  <title>HexTatics</title>
-  <link rel="stylesheet" href="style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="description"
+        content="HexTatics — Puzzle hexagonal estratégico. Remova peças respeitando regras de cor!">
+    <meta name="theme-color" content="#0f0f1a">
+    <title>HexTatics — Puzzle Hexagonal</title>
+    <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
 
-  <!-- HUD Superior -->
-  <div id="hud">
-    <div id="hud-left">
-      <span id="level-name">HexTatics</span>
-      <span id="level-description"></span>
+    <!-- Tela de Boas-Vindas -->
+    <div id="welcome-screen">
+        <span class="hex-deco top-left">⬡</span>
+        <span class="hex-deco bot-right">⬡</span>
+        <h1>HexTatics</h1>
+        <p class="subtitle">Puzzle Hexagonal Estratégico</p>
+        <div class="welcome-stats" id="welcome-stats" style="display:none;">
+            <div class="welcome-progress-bar">
+                <div class="welcome-progress-fill" id="welcome-progress-fill"></div>
+            </div>
+            <span id="welcome-progress-text"></span>
+        </div>
+        <button class="btn-play" id="btn-start">▶ Jogar</button>
+        <button class="btn-continue" id="btn-continue" style="display:none;">▶ Continuar</button>
+        <button class="btn-editor-welcome" id="btn-editor-welcome">🔧 Criar Fase</button>
     </div>
-    <div id="hud-center">
-      <span id="move-counter">Movimentos: 0</span>
+
+    <!-- HUD Superior (Jogo) -->
+    <div id="hud" style="display:none;">
+        <div class="hud-left">
+            <span id="level-name">Fase 1</span>
+            <span id="level-description"></span>
+        </div>
+        <div class="hud-center">
+            <span id="move-counter">0</span>
+            <span id="level-timer" class="timer-badge">0:00</span>
+        </div>
+        <div class="hud-right">
+            <button class="btn btn-icon btn-undo" id="btn-undo" title="Desfazer (Ctrl+Z)">⟲</button>
+            <button class="btn btn-icon btn-reset" id="btn-reset" title="Reiniciar">↺</button>
+            <button class="btn btn-icon" id="btn-help" title="Regras">❓</button>
+            <button class="btn btn-icon" id="btn-levels" title="Fases">☰</button>
+        </div>
     </div>
-    <div id="hud-right">
-      <button class="btn" id="btn-rules" title="Regras">❓ <span class="btn-label">Regras</span></button>
-      <button class="btn" id="btn-undo" title="Desfazer (Ctrl+Z)">↩ <span class="btn-label">Desfazer</span></button>
-      <button class="btn btn-danger" id="btn-reset" title="Reiniciar">🔄 <span class="btn-label">Reiniciar</span></button>
-      <button class="btn" id="btn-levels" title="Fases">📋 <span class="btn-label">Fases</span></button>
+
+    <!-- HUD Superior (Editor) -->
+    <div id="editor-hud" style="display:none;">
+        <div class="hud-left">
+            <button class="btn btn-icon" id="editor-back" title="Voltar">←</button>
+            <input type="text" id="editor-name" value="Minha Fase" placeholder="Nome da fase" class="editor-name-input">
+        </div>
+        <div class="hud-center">
+            <span class="editor-size-label">Grade:</span>
+            <button class="btn btn-icon btn-tiny" id="editor-cols-minus">−</button>
+            <span id="editor-cols-val" class="editor-size-val">7</span>
+            <button class="btn btn-icon btn-tiny" id="editor-cols-plus">+</button>
+            <span class="editor-sep">×</span>
+            <button class="btn btn-icon btn-tiny" id="editor-rows-minus">−</button>
+            <span id="editor-rows-val" class="editor-size-val">6</span>
+            <button class="btn btn-icon btn-tiny" id="editor-rows-plus">+</button>
+        </div>
+        <div class="hud-right">
+            <span id="editor-piece-count" class="editor-count">0 peças</span>
+            <button class="btn btn-icon btn-reset" id="editor-clear" title="Limpar tudo">🗑️</button>
+        </div>
     </div>
-  </div>
 
-  <!-- Área principal -->
-  <div id="main-area">
-    <div id="canvas-container">
-      <canvas id="gameCanvas"></canvas>
+    <!-- Área do Jogo / Editor (compartilhada) -->
+    <div id="game-area">
+        <canvas id="game-canvas"></canvas>
+        <div id="tooltip">
+            <div class="tooltip-title"></div>
+            <div class="tooltip-rule"></div>
+        </div>
+        <div id="tutorial-overlay">
+            <div id="tutorial-bubble" style="display:none;">
+                <div class="tutorial-arrow arrow-down"></div>
+                <div id="tutorial-text"></div>
+                <button class="btn btn-accent" id="tutorial-btn">Entendi →</button>
+            </div>
+        </div>
+        <div id="status-message"></div>
     </div>
-    <div id="hand-panel">
-      <div id="hand-title">Mão</div>
-      <div id="hand-pieces"></div>
+
+    <!-- Mão do Jogador (Jogo) -->
+    <div id="hand-area" style="display:none;">
+        <span id="hand-label">Mão: vazia</span>
+        <div id="hand-pieces"></div>
     </div>
-  </div>
 
-  <!-- Controles mobile (visíveis apenas em telas pequenas) -->
-  <div id="mobile-controls">
-    <button class="btn" id="mb-rules">❓ Regras</button>
-    <button class="btn" id="mb-undo">↩ Desfazer</button>
-    <button class="btn btn-danger" id="mb-reset">🔄 Reiniciar</button>
-    <button class="btn" id="mb-levels">📋 Fases</button>
-  </div>
-
-  <!-- Overlay de mensagens -->
-  <div id="overlay">
-    <div id="overlay-content">
-      <div id="overlay-stars"></div>
-      <div id="overlay-title"></div>
-      <div id="overlay-message"></div>
-      <div id="overlay-buttons"></div>
+    <!-- Toolbar do Editor -->
+    <div id="editor-toolbar" style="display:none;">
+        <div class="editor-tools">
+            <div class="editor-section">
+                <button class="editor-tool active" data-tool="red" title="Vermelha ♦"><span class="tool-swatch"
+                        style="background:#DD2222;"></span></button>
+                <button class="editor-tool" data-tool="blue" title="Azul ●"><span class="tool-swatch"
+                        style="background:#2244CC;"></span></button>
+                <button class="editor-tool" data-tool="green" title="Verde ■"><span class="tool-swatch"
+                        style="background:#22AA22;"></span></button>
+                <button class="editor-tool" data-tool="yellow" title="Amarela ▲"><span class="tool-swatch"
+                        style="background:#EECC00;"></span></button>
+                <button class="editor-tool" data-tool="gray" title="Cinza ▬"><span class="tool-swatch"
+                        style="background:#999;"></span></button>
+                <span class="editor-divider"></span>
+                <button class="editor-tool" data-tool="eraser" title="Apagar peça">🧹</button>
+                <button class="editor-tool" data-tool="toggle" title="Criar/remover buraco">🕳️</button>
+                <button class="editor-tool" data-tool="modifier" title="Adicionar modificador">🔄</button>
+            </div>
+            <div class="editor-mod-palette" id="editor-mod-palette" style="display:none;">
+                <span class="editor-mod-label">Mod:</span>
+                <button class="editor-mod active" data-mod="red"><span class="mod-dot"
+                        style="background:#DD2222;"></span></button>
+                <button class="editor-mod" data-mod="blue"><span class="mod-dot"
+                        style="background:#2244CC;"></span></button>
+                <button class="editor-mod" data-mod="green"><span class="mod-dot"
+                        style="background:#22AA22;"></span></button>
+                <button class="editor-mod" data-mod="yellow"><span class="mod-dot"
+                        style="background:#EECC00;"></span></button>
+            </div>
+        </div>
+        <div class="editor-actions">
+            <div class="editor-settings">
+                <label>Limite: <input type="number" id="editor-move-limit" min="0" max="99" value="" placeholder="∞"
+                        class="editor-num-input"></label>
+                <label>Par: <input type="number" id="editor-par" min="1" max="99" value="" placeholder="auto"
+                        class="editor-num-input"></label>
+            </div>
+            <div class="editor-buttons">
+                <button class="btn btn-accent" id="editor-test">▶ Testar</button>
+                <button class="btn" id="editor-save">💾 Salvar</button>
+                <button class="btn" id="editor-export">📤</button>
+                <button class="btn" id="editor-import">📥</button>
+            </div>
+        </div>
     </div>
-  </div>
 
-  <!-- Modal de seleção de fases -->
-  <div id="level-select-modal">
-    <div id="level-select-content">
-      <h2>🎯 Selecionar Fase</h2>
-      <div id="level-list" class="level-grid"></div>
-      <button class="btn" id="close-level-select">Fechar</button>
+    <!-- Confetti Canvas -->
+    <canvas id="confetti-canvas"></canvas>
+
+    <!-- Overlay -->
+    <div id="overlay">
+        <!-- Win Modal -->
+        <div class="modal win" id="win-modal" style="display:none;">
+            <div class="win-header">
+                <h2>🎉 Fase Completa!</h2>
+            </div>
+            <div class="win-level-name" id="win-level-name"></div>
+            <div class="stars" id="win-stars"></div>
+            <div class="win-stats">
+                <div class="win-stat">
+                    <div class="win-stat-value" id="win-moves">0</div>
+                    <div class="win-stat-label">Movimentos</div>
+                </div>
+                <div class="win-stat">
+                    <div class="win-stat-value" id="win-par">0</div>
+                    <div class="win-stat-label">Par</div>
+                </div>
+                <div class="win-stat">
+                    <div class="win-stat-value" id="win-time">0:00</div>
+                    <div class="win-stat-label">Tempo</div>
+                </div>
+            </div>
+            <div id="win-best-msg" class="win-best-msg"></div>
+            <div class="win-actions">
+                <button class="btn btn-accent btn-large" id="btn-next-level">Próxima Fase →</button>
+                <div class="win-secondary">
+                    <button class="btn" id="btn-replay">↺ Jogar Novamente</button>
+                    <button class="btn" id="btn-levels-win">☰ Fases</button>
+                    <button class="btn" id="btn-back-editor" style="display:none;">🔧 Voltar ao Editor</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Game Complete Modal -->
+        <div class="modal game-complete" id="game-complete-modal" style="display:none;">
+            <h2>🏆 Mestre Supremo! 🏆</h2>
+            <p class="game-complete-sub">Você completou todas as 12 fases do HexTatics!</p>
+            <div class="stars total-stars" id="total-stars"></div>
+            <div class="game-complete-stats"><span id="total-stars-text"></span></div>
+            <div class="win-actions">
+                <button class="btn btn-accent btn-large" id="btn-replay-all">↺ Jogar Tudo de Novo</button>
+                <button class="btn" id="btn-levels-complete">☰ Ver Fases</button>
+            </div>
+        </div>
+
+        <!-- Lose Modal -->
+        <div class="modal lose" id="lose-modal" style="display:none;">
+            <h2>⛔ Limite de Movimentos!</h2>
+            <p>Você excedeu o limite. Tente uma abordagem diferente!</p>
+            <div class="lose-actions">
+                <button class="btn btn-accent" id="btn-undo-lose">⟲ Desfazer Último</button>
+                <button class="btn btn-reset" id="btn-reset-lose">↺ Reiniciar</button>
+                <button class="btn" id="btn-levels-lose">☰ Fases</button>
+            </div>
+        </div>
+
+        <!-- Level Select Modal -->
+        <div class="modal level-select" id="level-select-modal" style="display:none;">
+            <h2>📋 Selecione uma Fase</h2>
+            <div class="level-progress" id="level-progress">
+                <div class="level-progress-bar">
+                    <div class="level-progress-fill" id="level-progress-fill"></div>
+                </div>
+                <span id="level-progress-text"></span>
+            </div>
+            <div class="level-grid" id="level-grid"></div>
+            <div id="custom-levels-section" style="display:none;">
+                <h3 class="custom-section-title">🔧 Fases Personalizadas</h3>
+                <div class="level-grid" id="custom-level-grid"></div>
+            </div>
+            <div class="level-select-actions">
+                <button class="btn" id="btn-open-editor-from-levels">🔧 Criar Fase</button>
+                <button class="btn" id="btn-close-levels">✕ Fechar</button>
+            </div>
+        </div>
+
+        <!-- Help Modal -->
+        <div class="modal" id="help-modal" style="display:none;">
+            <h2>📖 Regras do Jogo</h2>
+            <p>Remova todas as peças do tabuleiro! Cada cor tem sua regra:</p>
+            <div class="rules-grid">
+                <div class="rule-row">
+                    <div class="rule-swatch" style="background:#CC2222;">♦</div>
+                    <div class="rule-text"><strong>Vermelha</strong><br>Remove se tem 1+ vizinhas, mas NÃO todas.</div>
+                </div>
+                <div class="rule-row">
+                    <div class="rule-swatch" style="background:#2244BB;">●</div>
+                    <div class="rule-text"><strong>Azul</strong><br>Remove só quando NÃO tem vizinhas.</div>
+                </div>
+                <div class="rule-row">
+                    <div class="rule-swatch" style="background:#1D8C1D;">■</div>
+                    <div class="rule-text"><strong>Verde</strong><br>Remove se TODAS as vizinhas estão preenchidas.
+                    </div>
+                </div>
+                <div class="rule-row">
+                    <div class="rule-swatch" style="background:#CCAA00;">▲</div>
+                    <div class="rule-text"><strong>Amarela</strong><br>Exatamente 3 vizinhas sem pares opostos.</div>
+                </div>
+                <div class="rule-row">
+                    <div class="rule-swatch" style="background:#666;">▬</div>
+                    <div class="rule-text"><strong>Cinza</strong><br>Remove só quando sobrar apenas cinzas.</div>
+                </div>
+            </div>
+            <div class="help-extras">
+                <p>🔄 <strong>Modificadores:</strong> Círculo colorido = regra usa aquela cor como referência.</p>
+                <p>🖐️ <strong>Mão:</strong> Peças removidas vão para sua mão. Clique para recolocar.</p>
+                <p>↩️ <strong>Undo:</strong> Ctrl+Z ou botão ⟲</p>
+            </div>
+            <button class="btn" id="btn-close-help">✕ Fechar</button>
+        </div>
     </div>
-  </div>
-
-  <!-- Tooltip de regras -->
-  <div id="rules-tooltip">
-    <h4>📖 Regras das Peças</h4>
-    <div class="rule-item red">
-      <strong>Vermelha (R):</strong> Remover se tiver 1+ vizinhos, mas NÃO todos.
-    </div>
-    <div class="rule-item blue">
-      <strong>Azul (B):</strong> Remover se NÃO tiver nenhum vizinho.
-    </div>
-    <div class="rule-item green">
-      <strong>Verde (G):</strong> Remover se TODOS os vizinhos estiverem preenchidos.
-    </div>
-    <div class="rule-item yellow">
-      <strong>Amarela (Y):</strong> Exatamente 3 vizinhos, sem pares opostos.
-    </div>
-    <div class="rule-item gray">
-      <strong>Cinza (▪):</strong> Removível somente quando for a última peça.
-    </div>
-    <div class="rules-modifier-note">
-      ⭕ Círculo colorido = modificador: considera apenas peças DAQUELA cor como vizinhas.
-    </div>
-  </div>
-
-  <!-- Toast container -->
-  <div id="toast-container"></div>
-
-  <!-- Scripts -->
-  <script src="levels.js"></script>
-  <script src="game.js"></script>
-  <script src="renderer.js"></script>
-  <script src="solver.js"></script>
-
-  <script>
-    // ==========================================
-    // INICIALIZAÇÃO
-    // ==========================================
-
-    const canvas = document.getElementById('gameCanvas');
-    const levelNameEl = document.getElementById('level-name');
-    const levelDescEl = document.getElementById('level-description');
-    const moveCounterEl = document.getElementById('move-counter');
-    const handPiecesEl = document.getElementById('hand-pieces');
-    const handPanel = document.getElementById('hand-panel');
-    const overlay = document.getElementById('overlay');
-    const overlayTitle = document.getElementById('overlay-title');
-    const overlayMessage = document.getElementById('overlay-message');
-    const overlayButtons = document.getElementById('overlay-buttons');
-    const overlayStars = document.getElementById('overlay-stars');
-    const levelSelectModal = document.getElementById('level-select-modal');
-    const levelListEl = document.getElementById('level-list');
-    const rulesTooltip = document.getElementById('rules-tooltip');
-
-    const game = new Game();
-    const renderer = new Renderer(canvas, game);
-    game.onStateChange = updateUI;
-
-    // Progress tracking
-    const completedLevels = new Set();
-    const levelBestMoves = {};
-
-    function loadProgress() {
-      try {
-        const saved = localStorage.getItem('hextatics_progress');
-        if (saved) {
-          const data = JSON.parse(saved);
-          if (data.completed) data.completed.forEach(id => completedLevels.add(id));
-          if (data.bestMoves) Object.assign(levelBestMoves, data.bestMoves);
-        }
-      } catch(e) {}
-    }
-
-    function saveProgress() {
-      try {
-        localStorage.setItem('hextatics_progress', JSON.stringify({
-          completed: [...completedLevels],
-          bestMoves: levelBestMoves
-        }));
-      } catch(e) {}
-    }
-
-    loadProgress();
-
-    // ==========================================
-    // CARREGAR FASE
-    // ==========================================
-
-    function loadLevel(levelId) {
-      const level = LEVELS.find(l => l.id === levelId);
-      if (!level) return;
-
-      game.loadLevel(level);
-      renderer.resize();
-      hideOverlay();
-      hideLevelSelect();
-      updateUI();
-    }
-
-    // ==========================================
-    // ATUALIZAR INTERFACE
-    // ==========================================
-
-    function updateUI() {
-      if (game.currentLevel) {
-        levelNameEl.textContent = `Fase ${game.currentLevel.id}: ${game.currentLevel.name}`;
-        levelDescEl.textContent = game.currentLevel.description;
-      }
-
-      if (game.moveLimit) {
-        moveCounterEl.textContent = `${game.moves} / ${game.moveLimit}`;
-        moveCounterEl.classList.toggle('over-limit', game.moves >= game.moveLimit);
-      } else {
-        moveCounterEl.textContent = `${game.moves} mov.`;
-        moveCounterEl.classList.remove('over-limit');
-      }
-
-      updateHand();
-
-      if (game.state === 'won') {
-        // Save progress
-        if (game.currentLevel) {
-          const id = game.currentLevel.id;
-          completedLevels.add(id);
-          if (!levelBestMoves[id] || game.moves < levelBestMoves[id]) {
-            levelBestMoves[id] = game.moves;
-          }
-          saveProgress();
-        }
-        showWinOverlay();
-      } else if (game.state === 'lost') {
-        showLoseOverlay();
-      }
-    }
-
-    function updateHand() {
-      handPiecesEl.innerHTML = '';
-
-      const colorMap = {
-        red: '#e5534b', blue: '#388bfd', green: '#3fb950',
-        yellow: '#d29922', gray: '#6e7681'
-      };
-
-      const symbolMap = {
-        red: 'R', blue: 'B', green: 'G', yellow: 'Y', gray: '▪'
-      };
-
-      if (game.hand.length === 0) {
-        const emptyMsg = document.createElement('div');
-        emptyMsg.className = 'hand-empty';
-        emptyMsg.textContent = 'Vazia';
-        handPiecesEl.appendChild(emptyMsg);
-        handPanel.classList.remove('has-pieces');
-      } else {
-        handPanel.classList.add('has-pieces');
-      }
-
-      game.hand.forEach((piece, index) => {
-        const div = document.createElement('div');
-        div.className = `hand-piece ${piece.color}`;
-        div.textContent = symbolMap[piece.color] || '?';
-
-        if (game.selectedHandPiece === index) {
-          div.classList.add('selected');
-        }
-
-        if (piece.modifier) {
-          const dot = document.createElement('div');
-          dot.className = 'modifier-dot';
-          dot.style.backgroundColor = colorMap[piece.modifier] || '#888';
-          div.appendChild(dot);
-        }
-
-        div.addEventListener('click', (e) => {
-          e.stopPropagation();
-          if (game.selectedHandPiece === index) {
-            game.deselectHandPiece();
-          } else {
-            game.selectHandPiece(index);
-          }
-        });
-
-        // Touch support for hand pieces
-        div.addEventListener('touchend', (e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          if (game.selectedHandPiece === index) {
-            game.deselectHandPiece();
-          } else {
-            game.selectHandPiece(index);
-          }
-        });
-
-        handPiecesEl.appendChild(div);
-      });
-    }
-
-    // ==========================================
-    // TOAST MESSAGES
-    // ==========================================
-
-    function showToast(message, isError = false) {
-      const container = document.getElementById('toast-container');
-      const toast = document.createElement('div');
-      toast.className = `toast${isError ? ' error' : ''}`;
-      toast.textContent = message;
-      container.innerHTML = '';
-      container.appendChild(toast);
-      setTimeout(() => { toast.remove(); }, 2500);
-    }
-
-    // ==========================================
-    // OVERLAYS
-    // ==========================================
-
-    function showWinOverlay() {
-      const moves = game.moves;
-      const pieces = game.currentLevel.pieces.length;
-
-      // Star rating based on efficiency
-      let stars = '⭐';
-      if (moves <= pieces + 2) stars = '⭐⭐⭐';
-      else if (moves <= pieces + 5) stars = '⭐⭐';
-
-      overlayStars.textContent = stars;
-      overlayTitle.textContent = '🎉 Parabéns!';
-      overlayTitle.className = 'win';
-      overlayMessage.textContent = `Puzzle resolvido em ${moves} movimentos!`;
-
-      overlayButtons.innerHTML = '';
-
-      const currentIdx = LEVELS.findIndex(l => l.id === game.currentLevel.id);
-      if (currentIdx < LEVELS.length - 1) {
-        const nextBtn = document.createElement('button');
-        nextBtn.className = 'btn btn-primary';
-        nextBtn.textContent = '▶ Próxima Fase';
-        nextBtn.addEventListener('click', () => loadLevel(LEVELS[currentIdx + 1].id));
-        overlayButtons.appendChild(nextBtn);
-      }
-
-      const replayBtn = document.createElement('button');
-      replayBtn.className = 'btn';
-      replayBtn.textContent = '🔄 Jogar Novamente';
-      replayBtn.addEventListener('click', () => { game.reset(); hideOverlay(); });
-      overlayButtons.appendChild(replayBtn);
-
-      const levelsBtn = document.createElement('button');
-      levelsBtn.className = 'btn';
-      levelsBtn.textContent = '📋 Fases';
-      levelsBtn.addEventListener('click', () => { hideOverlay(); showLevelSelect(); });
-      overlayButtons.appendChild(levelsBtn);
-
-      overlay.classList.add('visible');
-    }
-
-    function showLoseOverlay() {
-      overlayStars.textContent = '';
-      overlayTitle.textContent = '❌ Limite Excedido!';
-      overlayTitle.className = 'lose';
-      overlayMessage.textContent = 'Você excedeu o limite de movimentos.';
-
-      overlayButtons.innerHTML = '';
-
-      const undoBtn = document.createElement('button');
-      undoBtn.className = 'btn';
-      undoBtn.textContent = '↩ Desfazer Último';
-      undoBtn.addEventListener('click', () => { game.undo(); hideOverlay(); });
-      overlayButtons.appendChild(undoBtn);
-
-      const resetBtn = document.createElement('button');
-      resetBtn.className = 'btn btn-danger';
-      resetBtn.textContent = '🔄 Reiniciar';
-      resetBtn.addEventListener('click', () => { game.reset(); hideOverlay(); });
-      overlayButtons.appendChild(resetBtn);
-
-      overlay.classList.add('visible');
-    }
-
-    function hideOverlay() {
-      overlay.classList.remove('visible');
-    }
-
-    // ==========================================
-    // SELEÇÃO DE FASES
-    // ==========================================
-
-    function showLevelSelect() {
-      levelListEl.innerHTML = '';
-
-      for (const level of LEVELS) {
-        const card = document.createElement('div');
-        card.className = 'level-card';
-
-        if (completedLevels.has(level.id)) card.classList.add('completed');
-        if (game.currentLevel && game.currentLevel.id === level.id) card.classList.add('current');
-
-        const numberEl = document.createElement('div');
-        numberEl.className = 'level-card-number';
-        numberEl.textContent = completedLevels.has(level.id) ? '✓' : level.id;
-
-        const infoEl = document.createElement('div');
-        infoEl.className = 'level-card-info';
-
-        const titleEl = document.createElement('h3');
-        titleEl.textContent = level.name;
-
-        const descEl = document.createElement('p');
-        descEl.textContent = level.description;
-
-        infoEl.appendChild(titleEl);
-        infoEl.appendChild(descEl);
-
-        const metaEl = document.createElement('div');
-        metaEl.className = 'level-card-meta';
-        let metaText = `${level.pieces.length} peças`;
-        if (level.moveLimit) metaText += ` · ${level.moveLimit} mov.`;
-        if (levelBestMoves[level.id]) metaText += ` · ⭐${levelBestMoves[level.id]}`;
-        metaEl.textContent = metaText;
-
-        card.appendChild(numberEl);
-        card.appendChild(infoEl);
-        card.appendChild(metaEl);
-
-        card.addEventListener('click', () => loadLevel(level.id));
-        levelListEl.appendChild(card);
-      }
-
-      levelSelectModal.classList.add('visible');
-    }
-
-    function hideLevelSelect() {
-      levelSelectModal.classList.remove('visible');
-    }
-
-    // ==========================================
-    // TOOLTIP DE REGRAS
-    // ==========================================
-
-    let rulesVisible = false;
-
-    function toggleRules() {
-      rulesVisible = !rulesVisible;
-      if (rulesVisible) {
-        // Position tooltip
-        const isMobile = window.innerWidth <= 480;
-        if (!isMobile) {
-          const btn = document.getElementById('btn-rules');
-          const rect = btn.getBoundingClientRect();
-          rulesTooltip.style.top = (rect.bottom + 8) + 'px';
-          rulesTooltip.style.right = '16px';
-          rulesTooltip.style.left = 'auto';
-          rulesTooltip.style.bottom = 'auto';
-        }
-        rulesTooltip.classList.add('visible');
-      } else {
-        rulesTooltip.classList.remove('visible');
-      }
-    }
-
-    // ==========================================
-    // CANVAS — Mouse Events
-    // ==========================================
-
-    canvas.addEventListener('mousemove', (e) => {
-      const { x, y } = renderer.getCanvasCoords(e.clientX, e.clientY);
-      renderer.updateHover(x, y);
-
-      const hex = renderer.hoverHex;
-      if (hex) {
-        const piece = game.getPiece(hex.q, hex.r);
-        if (piece && game.selectedHandPiece === null) {
-          canvas.style.cursor = game.canRemove(hex.q, hex.r) ? 'pointer' : 'not-allowed';
-        } else if (!piece && game.selectedHandPiece !== null && game.canPlaceAt(hex.q, hex.r)) {
-          canvas.style.cursor = 'pointer';
-        } else {
-          canvas.style.cursor = 'default';
-        }
-      } else {
-        canvas.style.cursor = 'default';
-      }
-    });
-
-    canvas.addEventListener('mouseleave', () => {
-      renderer.clearHover();
-      canvas.style.cursor = 'default';
-    });
-
-    canvas.addEventListener('click', (e) => {
-      handleCanvasInteraction(e.clientX, e.clientY);
-    });
-
-    // ==========================================
-    // CANVAS — Touch Events
-    // ==========================================
-
-    let touchStartTime = 0;
-    let touchMoved = false;
-
-    canvas.addEventListener('touchstart', (e) => {
-      e.preventDefault();
-      touchStartTime = Date.now();
-      touchMoved = false;
-      const touch = e.touches[0];
-      const { x, y } = renderer.getCanvasCoords(touch.clientX, touch.clientY);
-      renderer.updateHover(x, y);
-    }, { passive: false });
-
-    canvas.addEventListener('touchmove', (e) => {
-      e.preventDefault();
-      touchMoved = true;
-      const touch = e.touches[0];
-      const { x, y } = renderer.getCanvasCoords(touch.clientX, touch.clientY);
-      renderer.updateHover(x, y);
-    }, { passive: false });
-
-    canvas.addEventListener('touchend', (e) => {
-      e.preventDefault();
-      if (!touchMoved && Date.now() - touchStartTime < 500) {
-        const touch = e.changedTouches[0];
-        handleCanvasInteraction(touch.clientX, touch.clientY);
-      }
-      // Delay clearing hover so the user sees feedback
-      setTimeout(() => renderer.clearHover(), 150);
-    }, { passive: false });
-
-    canvas.addEventListener('touchcancel', (e) => {
-      renderer.clearHover();
-    });
-
-    // ==========================================
-    // INTERAÇÃO UNIFICADA (mouse + touch)
-    // ==========================================
-
-    function handleCanvasInteraction(clientX, clientY) {
-      if (game.state !== 'playing') return;
-
-      const { x, y } = renderer.getCanvasCoords(clientX, clientY);
-      const hex = renderer.pixelToHex(x, y);
-
-      if (!hex) {
-        game.deselectHandPiece();
-        return;
-      }
-
-      const piece = game.getPiece(hex.q, hex.r);
-
-      if (game.selectedHandPiece !== null) {
-        if (!piece && game.canPlaceAt(hex.q, hex.r)) {
-          const handIndex = game.selectedHandPiece;
-          renderer.addFadeIn(hex.q, hex.r);
-          game.placePiece(hex.q, hex.r, handIndex);
-          game.deselectHandPiece();
-        } else if (piece) {
-          game.deselectHandPiece();
-          if (game.canRemove(hex.q, hex.r)) {
-            renderer.addFadeOut(hex.q, hex.r, piece);
-            game.removePiece(hex.q, hex.r);
-          } else {
-            showToast('Esta peça não pode ser removida agora', true);
-          }
-        }
-      } else {
-        if (piece) {
-          if (game.canRemove(hex.q, hex.r)) {
-            renderer.addFadeOut(hex.q, hex.r, piece);
-            game.removePiece(hex.q, hex.r);
-          } else {
-            showToast('Esta peça não pode ser removida agora', true);
-          }
-        }
-      }
-    }
-
-    // ==========================================
-    // EVENTOS DOS BOTÕES (Desktop)
-    // ==========================================
-
-    document.getElementById('btn-undo').addEventListener('click', () => { game.undo(); hideOverlay(); });
-    document.getElementById('btn-reset').addEventListener('click', () => { game.reset(); hideOverlay(); });
-    document.getElementById('btn-levels').addEventListener('click', () => showLevelSelect());
-    document.getElementById('btn-rules').addEventListener('click', () => toggleRules());
-    document.getElementById('close-level-select').addEventListener('click', () => hideLevelSelect());
-
-    // EVENTOS DOS BOTÕES (Mobile)
-    document.getElementById('mb-undo').addEventListener('click', () => { game.undo(); hideOverlay(); });
-    document.getElementById('mb-reset').addEventListener('click', () => { game.reset(); hideOverlay(); });
-    document.getElementById('mb-levels').addEventListener('click', () => showLevelSelect());
-    document.getElementById('mb-rules').addEventListener('click', () => toggleRules());
-
-    // Fechar modais
-    levelSelectModal.addEventListener('click', (e) => {
-      if (e.target === levelSelectModal) hideLevelSelect();
-    });
-
-    overlay.addEventListener('click', (e) => {
-      if (e.target === overlay) hideOverlay();
-    });
-
-    document.addEventListener('click', (e) => {
-      if (rulesVisible && !rulesTooltip.contains(e.target) &&
-          e.target.id !== 'btn-rules' && e.target.id !== 'mb-rules' &&
-          !e.target.closest('#btn-rules') && !e.target.closest('#mb-rules')) {
-        rulesVisible = false;
-        rulesTooltip.classList.remove('visible');
-      }
-    });
-
-    // ==========================================
-    // TECLADO
-    // ==========================================
-
-    document.addEventListener('keydown', (e) => {
-      if (e.ctrlKey && e.key === 'z') {
-        e.preventDefault();
-        game.undo();
-        hideOverlay();
-      }
-      if (e.key === 'Escape') {
-        game.deselectHandPiece();
-        hideLevelSelect();
-        hideOverlay();
-        if (rulesVisible) { rulesVisible = false; rulesTooltip.classList.remove('visible'); }
-      }
-      if (e.key === 'r' && !e.ctrlKey && !e.metaKey) {
-        game.reset();
-        hideOverlay();
-      }
-    });
-
-    // ==========================================
-    // RESIZE
-    // ==========================================
-
-    let resizeTimer;
-    window.addEventListener('resize', () => {
-      clearTimeout(resizeTimer);
-      resizeTimer = setTimeout(() => renderer.resize(), 50);
-    });
-
-    // Prevent double-tap zoom on iOS
-    let lastTouchEnd = 0;
-    document.addEventListener('touchend', (e) => {
-      const now = Date.now();
-      if (now - lastTouchEnd <= 300) e.preventDefault();
-      lastTouchEnd = now;
-    }, { passive: false });
-
-    // ==========================================
-    // INICIAR
-    // ==========================================
-
-    loadLevel(1);
-
-    console.log('%c🎯 HexTatics', 'font-size: 20px; color: #3fb950;');
-    console.log('Use solve(levelId) para resolver uma fase.');
-  </script>
 
+    <script src="levels.js"></script>
+    <script src="game.js"></script>
+    <script src="renderer.js"></script>
+    <script src="solver.js"></script>
+    <script src="editor.js"></script>
+    <script>
+        (function () {
+            "use strict";
+
+            const canvas = document.getElementById("game-canvas");
+            const game = new Game();
+            const renderer = new Renderer(canvas, game);
+            const editor = new Editor();
+
+            let currentLevelIndex = 0;
+            let statusTimeout = null;
+            let isCustomLevel = false;
+
+            // Timer
+            let levelStartTime = 0, levelElapsed = 0, timerInterval = null;
+
+            // Tutorial
+            let tutorialActive = false, tutorialSteps = [], tutorialStep = 0;
+
+            // Confetti
+            const confettiCanvas = document.getElementById("confetti-canvas");
+            const confettiCtx = confettiCanvas.getContext("2d");
+            let confettiPieces = [], confettiRunning = false;
+
+            // Editor hover
+            let editorHoveredCell = null;
+
+            // ===================== INIT =====================
+            function init() {
+                const saved = game.save.getCurrentLevel();
+                currentLevelIndex = (saved >= 0 && saved < LEVELS.length) ? saved : 0;
+                const hasProgress = Object.keys(game.save.data.completed).length > 0;
+                if (hasProgress) {
+                    document.getElementById("btn-continue").style.display = "block";
+                    document.getElementById("welcome-stats").style.display = "block";
+                    updateWelcomeProgress();
+                }
+                setupEventListeners();
+                gameLoop();
+            }
+
+            function updateWelcomeProgress() {
+                const total = LEVELS.length;
+                let completed = 0, totalStars = 0;
+                LEVELS.forEach(l => { if (game.save.isCompleted(l.id)) completed++; totalStars += game.save.getStars(l.id, l.par); });
+                const pct = Math.round((completed / total) * 100);
+                document.getElementById("welcome-progress-fill").style.width = pct + "%";
+                document.getElementById("welcome-progress-text").textContent = `${completed}/${total} fases · ${totalStars}/${total * 3} ⭐`;
+            }
+
+            // ===================== MODE SWITCHING =====================
+            function showGameUI() {
+                document.getElementById("hud").style.display = "flex";
+                document.getElementById("hand-area").style.display = "flex";
+                document.getElementById("editor-hud").style.display = "none";
+                document.getElementById("editor-toolbar").style.display = "none";
+                editor.active = false;
+                renderer._resize();
+            }
+
+            function showEditorUI() {
+                document.getElementById("hud").style.display = "none";
+                document.getElementById("hand-area").style.display = "none";
+                document.getElementById("editor-hud").style.display = "flex";
+                document.getElementById("editor-toolbar").style.display = "flex";
+                editor.active = true;
+                closeAllModals();
+                updateEditorUI();
+                renderer._resize();
+            }
+
+            function updateEditorUI() {
+                document.getElementById("editor-name").value = editor.name;
+                document.getElementById("editor-cols-val").textContent = editor.cols;
+                document.getElementById("editor-rows-val").textContent = editor.rows;
+                document.getElementById("editor-piece-count").textContent = `${editor.getPieceCount()} peças`;
+                const ml = document.getElementById("editor-move-limit");
+                ml.value = editor.moveLimit || "";
+                const par = document.getElementById("editor-par");
+                par.value = editor.par || "";
+            }
+
+            // ===================== LEVEL LOADING =====================
+            function loadLevel(index) {
+                if (index < 0 || index >= LEVELS.length) return;
+                currentLevelIndex = index;
+                isCustomLevel = false;
+                game.save.setCurrentLevel(index);
+                const level = LEVELS[index];
+                game.loadLevel(level);
+                showGameUI();
+                renderer._resize();
+                updateHUD();
+                updateHand();
+                closeAllModals();
+                startTimer();
+                game.sound.levelStart();
+                if (level.tutorial && level.tutorial.length > 0) startTutorial(level.tutorial); else endTutorial();
+            }
+
+            function loadCustomLevel(level) {
+                isCustomLevel = true;
+                game.loadLevel(level);
+                showGameUI();
+                renderer._resize();
+                updateHUD();
+                updateHand();
+                closeAllModals();
+                startTimer();
+                game.sound.levelStart();
+                endTutorial();
+            }
+
+            // ===================== TIMER =====================
+            function startTimer() { clearInterval(timerInterval); levelStartTime = Date.now(); levelElapsed = 0; timerInterval = setInterval(() => { if (game.won) return; levelElapsed = Math.floor((Date.now() - levelStartTime) / 1000); document.getElementById("level-timer").textContent = formatTime(levelElapsed); }, 1000); }
+            function stopTimer() { clearInterval(timerInterval); }
+            function formatTime(s) { return `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, "0")}`; }
+
+            // ===================== GAME LOOP =====================
+            function gameLoop() {
+                if (editor.active) {
+                    renderer.drawEditor(editor, editorHoveredCell);
+                } else {
+                    renderer.draw();
+                }
+                if (confettiRunning) drawConfetti();
+                requestAnimationFrame(gameLoop);
+            }
+
+            // ===================== HUD =====================
+            function updateHUD() {
+                const level = game.currentLevel;
+                if (!level) return;
+                document.getElementById("level-name").textContent = isCustomLevel ? `🔧 ${level.name}` : `${level.id}. ${level.name}`;
+                document.getElementById("level-description").textContent = level.description;
+                const moveEl = document.getElementById("move-counter");
+                if (game.moveLimit) {
+                    moveEl.textContent = `${game.moves}/${game.moveLimit}`;
+                    moveEl.classList.toggle("exceeded", game.moveLimitExceeded);
+                } else {
+                    moveEl.textContent = `${game.moves}`;
+                    moveEl.classList.remove("exceeded");
+                }
+            }
+
+            function updateHand() {
+                const container = document.getElementById("hand-pieces");
+                container.innerHTML = "";
+                const pieceColors = { red: "#DD2222", blue: "#2244CC", green: "#22AA22", yellow: "#EECC00", gray: "#999999" };
+                game.hand.forEach((piece, i) => {
+                    const el = document.createElement("div");
+                    el.className = "hand-piece";
+                    if (game.selectedHandPiece === i) el.classList.add("selected");
+                    el.style.backgroundColor = pieceColors[piece.color];
+                    if (piece.modifier) { const dot = document.createElement("div"); dot.className = "modifier-dot"; dot.style.backgroundColor = pieceColors[piece.modifier]; el.appendChild(dot); }
+                    el.addEventListener("click", () => {
+                        if (game.won || game.moveLimitExceeded) return;
+                        game.sound.click();
+                        if (game.selectedHandPiece === i) { game.selectedHandPiece = null; renderer.placementMode = false; } else { game.selectedHandPiece = i; renderer.placementMode = true; }
+                        updateHand();
+                    });
+                    container.appendChild(el);
+                });
+                document.getElementById("hand-label").textContent = game.hand.length > 0 ? `Mão (${game.hand.length}):` : "Mão: vazia";
+            }
+
+            function showStatus(msg, duration) {
+                duration = duration || 2000;
+                const el = document.getElementById("status-message");
+                el.textContent = msg;
+                el.classList.add("visible");
+                clearTimeout(statusTimeout);
+                statusTimeout = setTimeout(() => el.classList.remove("visible"), duration);
+            }
+
+            // ===================== TOOLTIP =====================
+            function updateTooltip(px, py, cell) {
+                const tooltip = document.getElementById("tooltip");
+                if (!cell || !game.getPiece(cell.q, cell.r)) { tooltip.classList.remove("visible"); return; }
+                if ('ontouchstart' in window) { tooltip.classList.remove("visible"); return; }
+                const info = game.getPieceInfo(cell.q, cell.r);
+                if (!info) { tooltip.classList.remove("visible"); return; }
+                tooltip.querySelector(".tooltip-title").textContent = `${info.name} ${info.canRemove ? "✅" : "🔒"}`;
+                tooltip.querySelector(".tooltip-rule").textContent = info.rule;
+                let tx = px + 16, ty = py - 60;
+                if (tx + 220 > renderer.displayWidth) tx = px - 230;
+                if (ty < 0) ty = py + 20;
+                tooltip.style.left = tx + "px";
+                tooltip.style.top = ty + "px";
+                tooltip.classList.add("visible");
+            }
+
+            // ===================== TUTORIAL =====================
+            function startTutorial(steps) { tutorialActive = true; tutorialSteps = steps; tutorialStep = 0; showTutorialStep(); }
+            function endTutorial() { tutorialActive = false; tutorialSteps = []; tutorialStep = 0; document.getElementById("tutorial-bubble").style.display = "none"; }
+            function showTutorialStep() {
+                if (tutorialStep >= tutorialSteps.length) { endTutorial(); return; }
+                const step = tutorialSteps[tutorialStep];
+                const bubble = document.getElementById("tutorial-bubble");
+                const text = document.getElementById("tutorial-text");
+                const btn = document.getElementById("tutorial-btn");
+                text.textContent = step.message; bubble.style.display = "block";
+                if (step.target === "board") { bubble.style.left = "50%"; bubble.style.top = "30%"; bubble.style.transform = "translateX(-50%)"; btn.textContent = tutorialStep < tutorialSteps.length - 1 ? "Entendi →" : "Começar! 🎮"; btn.style.display = "block"; }
+                else if (step.target && step.target.q !== undefined) { const { x, y } = renderer.hexToPixel(step.target.q, step.target.r); let bx = x - 130, by = y - 120; if (bx < 10) bx = 10; if (bx + 260 > renderer.displayWidth - 10) bx = renderer.displayWidth - 270; if (by < 10) by = y + 50; bubble.style.left = bx + "px"; bubble.style.top = by + "px"; bubble.style.transform = "none"; btn.style.display = (step.action === "remove" || step.action === "place") ? "none" : "block"; btn.textContent = "Entendi →"; }
+            }
+            function advanceTutorial() { tutorialStep++; if (tutorialStep >= tutorialSteps.length) endTutorial(); else showTutorialStep(); }
+            function checkTutorialAction(q, r, actionType) { if (!tutorialActive || tutorialStep >= tutorialSteps.length) return true; const step = tutorialSteps[tutorialStep]; if (!step.target || step.target === "board") return true; if (step.action !== actionType) return false; if (step.target.q === q && step.target.r === r) { setTimeout(() => advanceTutorial(), 300); return true; } return false; }
+
+            // ===================== CONFETTI =====================
+            function spawnConfetti() {
+                const dpr = window.devicePixelRatio || 1; confettiCanvas.width = window.innerWidth * dpr; confettiCanvas.height = window.innerHeight * dpr; confettiCanvas.style.width = window.innerWidth + "px"; confettiCanvas.style.height = window.innerHeight + "px"; confettiCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+                confettiPieces = []; const colors = ["#00ff88", "#ff4444", "#4488ff", "#ffdd44", "#ff88ff", "#88ffff"];
+                for (let i = 0; i < 120; i++) { confettiPieces.push({ x: Math.random() * window.innerWidth, y: -20 - Math.random() * 200, vx: (Math.random() - 0.5) * 4, vy: 2 + Math.random() * 4, rot: Math.random() * 360, rotV: (Math.random() - 0.5) * 10, w: 6 + Math.random() * 6, h: 4 + Math.random() * 4, color: colors[Math.floor(Math.random() * colors.length)], life: 1 }); }
+                confettiRunning = true; setTimeout(() => { confettiRunning = false; }, 4000);
+            }
+            function drawConfetti() {
+                confettiCtx.clearRect(0, 0, window.innerWidth, window.innerHeight);
+                for (let i = confettiPieces.length - 1; i >= 0; i--) { const c = confettiPieces[i]; c.x += c.vx; c.y += c.vy; c.vy += 0.08; c.rot += c.rotV; c.life -= 0.003; if (c.life <= 0 || c.y > window.innerHeight + 20) { confettiPieces.splice(i, 1); continue; } confettiCtx.save(); confettiCtx.translate(c.x, c.y); confettiCtx.rotate(c.rot * Math.PI / 180); confettiCtx.globalAlpha = Math.min(c.life, 1); confettiCtx.fillStyle = c.color; confettiCtx.fillRect(-c.w / 2, -c.h / 2, c.w, c.h); confettiCtx.restore(); }
+            }
+
+            // ===================== MODAIS =====================
+            function closeAllModals() {
+                document.getElementById("overlay").classList.remove("active");
+                ["win-modal", "lose-modal", "level-select-modal", "help-modal", "game-complete-modal"].forEach(id => document.getElementById(id).style.display = "none");
+            }
+            function showOverlay(modalId) { closeAllModals(); document.getElementById("overlay").classList.add("active"); document.getElementById(modalId).style.display = "block"; }
+
+            function showWinModal() {
+                stopTimer();
+                const level = game.currentLevel;
+                const stars = level.par ? game.save.getStars(level.id, level.par) : 3;
+
+                if (!isCustomLevel) {
+                    const isLast = currentLevelIndex >= LEVELS.length - 1;
+                    let allComplete = true;
+                    LEVELS.forEach(l => { if (!game.save.isCompleted(l.id)) allComplete = false; });
+                    if (allComplete && isLast) { showGameCompleteModal(); return; }
+                }
+
+                document.getElementById("win-level-name").textContent = level.name;
+                const starsEl = document.getElementById("win-stars");
+                starsEl.innerHTML = "";
+                for (let i = 1; i <= 3; i++) { const s = document.createElement("span"); s.className = "win-star"; s.textContent = "⭐"; if (i > stars) s.classList.add("star-off"); s.style.animationDelay = `${i * 0.2}s`; starsEl.appendChild(s); }
+
+                document.getElementById("win-moves").textContent = game.moves;
+                document.getElementById("win-par").textContent = level.par || "—";
+                document.getElementById("win-time").textContent = formatTime(levelElapsed);
+
+                const bestMsg = document.getElementById("win-best-msg");
+                if (!isCustomLevel) {
+                    const best = game.save.getBestMoves(level.id);
+                    if (best && best === game.moves && stars === 3) { bestMsg.textContent = "🏅 Solução perfeita!"; bestMsg.className = "win-best-msg perfect"; }
+                    else if (best && best < game.moves) { bestMsg.textContent = `Seu recorde: ${best} movimentos`; bestMsg.className = "win-best-msg"; }
+                    else { bestMsg.textContent = "✨ Novo recorde!"; bestMsg.className = "win-best-msg new-record"; }
+                } else { bestMsg.textContent = ""; }
+
+                document.getElementById("btn-next-level").style.display = isCustomLevel ? "none" : "inline-block";
+                document.getElementById("btn-back-editor").style.display = isCustomLevel ? "inline-block" : "none";
+                if (!isCustomLevel) {
+                    document.getElementById("btn-next-level").textContent = currentLevelIndex >= LEVELS.length - 1 ? "🏆 Ver Resultados" : "Próxima Fase →";
+                }
+
+                spawnConfetti(); game.sound.win(); showOverlay("win-modal");
+            }
+
+            function showGameCompleteModal() {
+                stopTimer();
+                let totalStars = 0; LEVELS.forEach(l => { totalStars += game.save.getStars(l.id, l.par); });
+                const starsEl = document.getElementById("total-stars"); starsEl.innerHTML = "";
+                for (let i = 0; i < totalStars; i++) { const s = document.createElement("span"); s.textContent = "⭐"; s.style.animationDelay = `${i * 0.05}s`; s.className = "win-star"; starsEl.appendChild(s); }
+                document.getElementById("total-stars-text").textContent = `${totalStars} de ${LEVELS.length * 3} estrelas conquistadas!`;
+                spawnConfetti(); spawnConfetti(); game.sound.win(); showOverlay("game-complete-modal");
+            }
+
+            function showLoseModal() { stopTimer(); showOverlay("lose-modal"); }
+
+            function showLevelSelect() {
+                const grid = document.getElementById("level-grid");
+                grid.innerHTML = "";
+                let completedCount = 0, totalStars = 0;
+                LEVELS.forEach((level, i) => {
+                    const card = document.createElement("div"); card.className = "level-card";
+                    const unlocked = game.save.isUnlocked(level.id), completed = game.save.isCompleted(level.id), stars = game.save.getStars(level.id, level.par);
+                    if (completed) { completedCount++; totalStars += stars; }
+                    if (completed) card.classList.add("completed");
+                    if (!unlocked) card.classList.add("locked");
+                    if (i === currentLevelIndex && !isCustomLevel) card.classList.add("current");
+                    if (unlocked) {
+                        let starsHTML = "";
+                        for (let s = 1; s <= 3; s++) starsHTML += s <= stars ? `<span>⭐</span>` : `<span class="star-off">☆</span>`;
+                        card.innerHTML = `<div class="level-num">${level.id}</div><div class="level-title">${level.name}</div><div class="level-stars">${starsHTML}</div>`;
+                        card.addEventListener("click", () => { game.sound.click(); loadLevel(i); });
+                    } else {
+                        card.innerHTML = `<div class="lock-icon">🔒</div><div class="level-title">${level.name}</div>`;
+                    }
+                    grid.appendChild(card);
+                });
+
+                // Progress bar
+                const pct = Math.round((completedCount / LEVELS.length) * 100);
+                document.getElementById("level-progress-fill").style.width = pct + "%";
+                document.getElementById("level-progress-text").textContent = `${completedCount}/${LEVELS.length} completas · ${totalStars}/${LEVELS.length * 3} ⭐`;
+
+                // Custom levels
+                const customSection = document.getElementById("custom-levels-section");
+                const customGrid = document.getElementById("custom-level-grid");
+                editor.loadCustomLevels();
+                if (editor.customLevels.length > 0) {
+                    customSection.style.display = "block";
+                    customGrid.innerHTML = "";
+                    editor.customLevels.forEach(level => {
+                        const card = document.createElement("div");
+                        card.className = "level-card custom-card";
+                        card.innerHTML = `<div class="level-num">🔧</div><div class="level-title">${level.name}</div><div class="custom-card-actions"><button class="btn btn-tiny" data-action="play">▶</button><button class="btn btn-tiny" data-action="edit">✏️</button><button class="btn btn-tiny btn-reset" data-action="delete">✕</button></div>`;
+                        card.querySelector('[data-action="play"]').addEventListener("click", (e) => { e.stopPropagation(); game.sound.click(); loadCustomLevel(level); });
+                        card.querySelector('[data-action="edit"]').addEventListener("click", (e) => { e.stopPropagation(); game.sound.click(); editor.loadFromLevel(level); editor.editingId = level.id; enterEditor(); });
+                        card.querySelector('[data-action="delete"]').addEventListener("click", (e) => { e.stopPropagation(); if (confirm(`Deletar "${level.name}"?`)) { editor.deleteCustomLevel(level.id); showLevelSelect(); } });
+                        customGrid.appendChild(card);
+                    });
+                } else {
+                    customSection.style.display = "none";
+                }
+
+                showOverlay("level-select-modal");
+            }
+
+            // ===================== EDITOR =====================
+            function enterEditor() {
+                const ws = document.getElementById("welcome-screen");
+                ws.classList.add("hiding");
+                setTimeout(() => ws.style.display = "none", 600);
+                showEditorUI();
+            }
+
+            function exitEditor() {
+                editor.active = false;
+                showGameUI();
+                // Show welcome screen
+                const ws = document.getElementById("welcome-screen");
+                ws.style.display = "flex";
+                ws.classList.remove("hiding");
+                document.getElementById("hud").style.display = "none";
+                document.getElementById("hand-area").style.display = "none";
+            }
+
+            function editorTest() {
+                editor.name = document.getElementById("editor-name").value;
+                const ml = document.getElementById("editor-move-limit").value;
+                editor.moveLimit = ml ? parseInt(ml) : null;
+                const par = document.getElementById("editor-par").value;
+                editor.par = par ? parseInt(par) : null;
+
+                if (editor.getPieceCount() === 0) { showStatus("Coloque pelo menos 1 peça!", 2000); return; }
+                const level = editor.toLevel();
+                loadCustomLevel(level);
+            }
+
+            function editorSave() {
+                editor.name = document.getElementById("editor-name").value;
+                const ml = document.getElementById("editor-move-limit").value;
+                editor.moveLimit = ml ? parseInt(ml) : null;
+                const par = document.getElementById("editor-par").value;
+                editor.par = par ? parseInt(par) : null;
+
+                if (editor.getPieceCount() === 0) { showStatus("Coloque pelo menos 1 peça!", 2000); return; }
+                editor.saveCustomLevel();
+                showStatus("💾 Fase salva!", 2000);
+            }
+
+            // ===================== EVENTS =====================
+            function setupEventListeners() {
+                // Welcome
+                document.getElementById("btn-start").addEventListener("click", () => { game.sound._init(); game.sound.click(); hideWelcome(); loadLevel(0); });
+                document.getElementById("btn-continue").addEventListener("click", () => { game.sound._init(); game.sound.click(); hideWelcome(); loadLevel(currentLevelIndex); });
+                document.getElementById("btn-editor-welcome").addEventListener("click", () => { game.sound._init(); game.sound.click(); editor.reset(); enterEditor(); });
+
+                // Canvas (game + editor)
+                canvas.addEventListener("click", (e) => {
+                    const rect = canvas.getBoundingClientRect();
+                    const px = e.clientX - rect.left, py = e.clientY - rect.top;
+                    if (editor.active) {
+                        const cell = renderer.editorPixelToHex(px, py, editor);
+                        if (cell) { editor.handleClick(cell.q, cell.r); updateEditorUI(); }
+                    } else {
+                        const cell = renderer.pixelToHex(px, py);
+                        if (cell) handleInteraction(cell);
+                    }
+                });
+
+                canvas.addEventListener("contextmenu", (e) => {
+                    e.preventDefault();
+                    if (editor.active) {
+                        const rect = canvas.getBoundingClientRect();
+                        const cell = renderer.editorPixelToHex(e.clientX - rect.left, e.clientY - rect.top, editor);
+                        if (cell) { const key = `${cell.q},${cell.r}`; editor.pieces.delete(key); updateEditorUI(); }
+                    }
+                });
+
+                // Touch
+                canvas.addEventListener("touchstart", (e) => {
+                    e.preventDefault();
+                    const touch = e.touches[0];
+                    const rect = canvas.getBoundingClientRect();
+                    if (editor.active) { editorHoveredCell = renderer.editorPixelToHex(touch.clientX - rect.left, touch.clientY - rect.top, editor); }
+                    else { renderer.hoveredCell = renderer.pixelToHex(touch.clientX - rect.left, touch.clientY - rect.top); }
+                }, { passive: false });
+
+                canvas.addEventListener("touchend", (e) => {
+                    e.preventDefault();
+                    if (editor.active) { if (editorHoveredCell) { editor.handleClick(editorHoveredCell.q, editorHoveredCell.r); updateEditorUI(); } }
+                    else { if (renderer.hoveredCell) handleInteraction(renderer.hoveredCell); }
+                }, { passive: false });
+
+                // Mouse move
+                canvas.addEventListener("mousemove", (e) => {
+                    const rect = canvas.getBoundingClientRect();
+                    const px = e.clientX - rect.left, py = e.clientY - rect.top;
+                    if (editor.active) { editorHoveredCell = renderer.editorPixelToHex(px, py, editor); }
+                    else { const cell = renderer.pixelToHex(px, py); renderer.hoveredCell = cell; updateTooltip(px, py, cell); }
+                });
+                canvas.addEventListener("mouseleave", () => { renderer.hoveredCell = null; editorHoveredCell = null; document.getElementById("tooltip").classList.remove("visible"); });
+
+                // HUD buttons
+                document.getElementById("btn-undo").addEventListener("click", doUndo);
+                document.getElementById("btn-reset").addEventListener("click", doReset);
+                document.getElementById("btn-levels").addEventListener("click", () => { game.sound.click(); showLevelSelect(); });
+                document.getElementById("btn-help").addEventListener("click", () => { game.sound.click(); showOverlay("help-modal"); });
+
+                // Win modal
+                document.getElementById("btn-next-level").addEventListener("click", () => { game.sound.click(); if (currentLevelIndex < LEVELS.length - 1) loadLevel(currentLevelIndex + 1); else showGameCompleteModal(); });
+                document.getElementById("btn-replay").addEventListener("click", () => { game.sound.click(); if (isCustomLevel) loadCustomLevel(game.currentLevel); else loadLevel(currentLevelIndex); });
+                document.getElementById("btn-levels-win").addEventListener("click", () => { game.sound.click(); closeAllModals(); showLevelSelect(); });
+                document.getElementById("btn-back-editor").addEventListener("click", () => { game.sound.click(); closeAllModals(); showEditorUI(); });
+
+                // Game complete
+                document.getElementById("btn-replay-all").addEventListener("click", () => { game.sound.click(); loadLevel(0); });
+                document.getElementById("btn-levels-complete").addEventListener("click", () => { game.sound.click(); closeAllModals(); showLevelSelect(); });
+
+                // Lose modal
+                document.getElementById("btn-undo-lose").addEventListener("click", () => { if (game.undo()) { game.sound.undo(); closeAllModals(); startTimer(); updateHUD(); updateHand(); } });
+                document.getElementById("btn-reset-lose").addEventListener("click", doReset);
+                document.getElementById("btn-levels-lose").addEventListener("click", () => { game.sound.click(); closeAllModals(); showLevelSelect(); });
+
+                // Close buttons
+                document.getElementById("btn-close-levels").addEventListener("click", () => { game.sound.click(); closeAllModals(); });
+                document.getElementById("btn-close-help").addEventListener("click", () => { game.sound.click(); closeAllModals(); });
+                document.getElementById("btn-open-editor-from-levels").addEventListener("click", () => { game.sound.click(); closeAllModals(); editor.reset(); enterEditor(); });
+
+                // Tutorial
+                document.getElementById("tutorial-btn").addEventListener("click", () => { game.sound.click(); advanceTutorial(); });
+
+                // ---- EDITOR EVENTS ----
+                document.getElementById("editor-back").addEventListener("click", () => { game.sound.click(); exitEditor(); });
+                document.getElementById("editor-clear").addEventListener("click", () => { if (confirm("Limpar tudo?")) { editor.clear(); updateEditorUI(); } });
+
+                // Grid size
+                document.getElementById("editor-cols-minus").addEventListener("click", () => { editor.resizeGrid(editor.cols - 1, editor.rows); updateEditorUI(); });
+                document.getElementById("editor-cols-plus").addEventListener("click", () => { editor.resizeGrid(editor.cols + 1, editor.rows); updateEditorUI(); });
+                document.getElementById("editor-rows-minus").addEventListener("click", () => { editor.resizeGrid(editor.cols, editor.rows - 1); updateEditorUI(); });
+                document.getElementById("editor-rows-plus").addEventListener("click", () => { editor.resizeGrid(editor.cols, editor.rows + 1); updateEditorUI(); });
+
+                // Tool selection
+                document.querySelectorAll(".editor-tool").forEach(btn => {
+                    btn.addEventListener("click", () => {
+                        document.querySelectorAll(".editor-tool").forEach(b => b.classList.remove("active"));
+                        btn.classList.add("active");
+                        editor.tool = btn.dataset.tool;
+                        document.getElementById("editor-mod-palette").style.display = editor.tool === "modifier" ? "flex" : "none";
+                    });
+                });
+
+                // Modifier palette
+                document.querySelectorAll(".editor-mod").forEach(btn => {
+                    btn.addEventListener("click", () => {
+                        document.querySelectorAll(".editor-mod").forEach(b => b.classList.remove("active"));
+                        btn.classList.add("active");
+                        editor.modifierColor = btn.dataset.mod;
+                    });
+                });
+
+                // Editor actions
+                document.getElementById("editor-test").addEventListener("click", () => { game.sound.click(); editorTest(); });
+                document.getElementById("editor-save").addEventListener("click", () => { game.sound.click(); editorSave(); });
+                document.getElementById("editor-export").addEventListener("click", () => {
+                    editor.name = document.getElementById("editor-name").value;
+                    const json = editor.exportJSON();
+                    navigator.clipboard.writeText(json).then(() => showStatus("📋 JSON copiado!", 2000)).catch(() => { prompt("Copie o JSON:", json); });
+                });
+                document.getElementById("editor-import").addEventListener("click", () => {
+                    const json = prompt("Cole o JSON da fase:");
+                    if (json && editor.importJSON(json)) { updateEditorUI(); showStatus("✅ Fase importada!", 2000); }
+                    else if (json) { showStatus("❌ JSON inválido!", 2000); }
+                });
+
+                // Editor name sync
+                document.getElementById("editor-name").addEventListener("input", (e) => { editor.name = e.target.value; });
+
+                // Keyboard
+                document.addEventListener("keydown", (e) => {
+                    if (e.ctrlKey && e.key === "z") { e.preventDefault(); doUndo(); }
+                    if (e.key === "Escape") {
+                        if (game.selectedHandPiece !== null) { game.selectedHandPiece = null; renderer.placementMode = false; updateHand(); }
+                        else closeAllModals();
+                    }
+                });
+
+                window.addEventListener("resize", () => renderer._resize());
+            }
+
+            function hideWelcome() { const ws = document.getElementById("welcome-screen"); ws.classList.add("hiding"); setTimeout(() => ws.style.display = "none", 600); }
+
+            function handleInteraction(cell) {
+                if (game.won) return;
+                if (game.selectedHandPiece !== null) {
+                    const piece = game.getPiece(cell.q, cell.r);
+                    if (!piece) {
+                        if (game.placePiece(cell.q, cell.r, game.selectedHandPiece)) {
+                            game.sound.place(); renderer.addAnimation(cell.q, cell.r, "fadeIn", 200); renderer.placementMode = false; updateHUD(); updateHand();
+                            if (game.checkWin()) setTimeout(() => showWinModal(), 400);
+                            else if (game.moveLimitExceeded) showLoseModal();
+                        }
+                    } else { game.selectedHandPiece = null; renderer.placementMode = false; updateHand(); handleRemove(cell); }
+                    return;
+                }
+                handleRemove(cell);
+            }
+
+            function handleRemove(cell) {
+                if (game.moveLimitExceeded) { showLoseModal(); return; }
+                const piece = game.getPiece(cell.q, cell.r);
+                if (!piece) return;
+                if (game.canRemove(cell.q, cell.r)) {
+                    if (tutorialActive && !checkTutorialAction(cell.q, cell.r, "remove")) { showStatus("Siga o tutorial!", 1500); game.sound.error(); return; }
+                    game.sound.remove(); renderer.addAnimation(cell.q, cell.r, "fadeOut", 200); renderer.spawnRemoveParticles(cell.q, cell.r, piece.color);
+                    setTimeout(() => { game.removePiece(cell.q, cell.r); updateHUD(); updateHand(); if (game.checkWin()) setTimeout(() => showWinModal(), 400); else if (game.moveLimitExceeded) showLoseModal(); }, 150);
+                } else { game.sound.error(); showStatus("Esta peça não pode ser removida agora!", 1800); }
+            }
+
+            function doUndo() { if (game.undo()) { game.sound.undo(); renderer.placementMode = false; closeAllModals(); updateHUD(); updateHand(); } }
+            function doReset() {
+                game.sound.click(); game.reset(); renderer.placementMode = false; renderer._resize(); closeAllModals(); startTimer(); updateHUD(); updateHand();
+                if (!isCustomLevel) { const level = LEVELS[currentLevelIndex]; if (level.tutorial) startTutorial(level.tutorial); }
+            }
+
+            init();
+        })();
+    </script>
 </body>
+
 </html>
