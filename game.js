@@ -226,8 +226,16 @@ class Game {
 
         const neighbors = this.getNeighbors(q, r);
 
-        // Gray: only removable when no non-gray pieces remain
+        // Gray piece logic
         if (piece.color === "gray") {
+            if (piece.modifier) {
+                // Gray with modifier: removable when no pieces of modifier color remain
+                for (const [, p] of this.board) {
+                    if (p.color === piece.modifier) return false;
+                }
+                return true;
+            }
+            // Plain gray: only removable when no non-gray pieces remain
             for (const [, p] of this.board) {
                 if (p.color !== "gray") return false;
             }
@@ -237,14 +245,15 @@ class Game {
         // Valid neighbors (exist on board and have cells)
         const validNeighbors = neighbors.filter(n => this.cellExists(n.q, n.r));
 
-        // Count filled neighbors (ignoring grays for non-gray pieces)
+        // Count filled neighbors
         let filledCount = 0;
         let totalSlots = 0;
         const filledDirs = [];
 
         for (const n of validNeighbors) {
             const np = this.getPiece(n.q, n.r);
-            if (np && np.color === "gray") continue; // grays invisible
+            // Skip gray neighbors only when no modifier targets gray
+            if (np && np.color === "gray" && piece.modifier !== "gray") continue;
 
             totalSlots++;
             if (np) {
@@ -374,7 +383,12 @@ class Game {
         const canRemove = this.canRemove(q, r);
 
         if (piece.modifier) {
-            info.rule += ` Modificador: só conta ${rules[piece.modifier]?.name || piece.modifier}s.`;
+            const modName = rules[piece.modifier]?.name || piece.modifier;
+            if (piece.color === "gray") {
+                info.rule = `Remove quando todas as ${modName}s forem removidas.`;
+            } else {
+                info.rule += ` Mod: só conta vizinhas ${modName}s.`;
+            }
         }
 
         return { ...info, canRemove, color: piece.color, modifier: piece.modifier };

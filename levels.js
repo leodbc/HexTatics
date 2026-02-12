@@ -13,13 +13,6 @@ const LEVELS = [
         id: 1, name: "Primeiro Passo", category: "Fundamentos",
         description: "Toque numa peça vermelha para removê-la. Depois remova a azul.",
         gridSize: { cols: 5, rows: 4 }, moveLimit: null, par: 3,
-        tutorial: [
-            { message: "Bem-vindo ao HexTatics! 🎯\nSeu objetivo: esvaziar o tabuleiro.", target: "board", action: "read" },
-            { message: "Peças VERMELHAS ♦ podem ser removidas quando têm pelo menos 1 vizinha, mas não TODAS.\nToque na vermelha à esquerda!", target: { q: 2, r: 1 }, action: "remove" },
-            { message: "Ótimo! Agora remova a outra vermelha.", target: { q: 4, r: 1 }, action: "remove" },
-            { message: "Peças AZUIS ● só podem ser removidas quando NÃO têm vizinhas.\nRemova a azul!", target: { q: 3, r: 1 }, action: "remove" },
-            { message: "Parabéns! 🎉 Você entendeu o básico!", target: "board", action: "read" },
-        ],
         mask: [
             [true, true, true, true, true],
             [true, true, true, true, true],

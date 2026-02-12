@@ -25,6 +25,7 @@
             </div>
             <span id="welcome-progress-text"></span>
         </div>
+        <button class="btn-tutorial" id="btn-tutorial">📖 Tutorial</button>
         <button class="btn-play" id="btn-start">▶ Jogar</button>
         <button class="btn-continue" id="btn-continue" style="display:none;">▶ Continuar</button>
         <button class="btn-editor-welcome" id="btn-editor-welcome">🔧 Criar Fase</button>
@@ -34,7 +35,6 @@
     <div id="hud" style="display:none;">
         <div class="hud-left">
             <span id="level-name">Fase 1</span>
-            <span id="level-description"></span>
         </div>
         <div class="hud-center">
             <span id="move-counter">0</span>
@@ -42,14 +42,13 @@
             <span id="level-timer" class="timer-badge">0:00</span>
         </div>
         <div class="hud-right">
-            <button class="btn btn-icon btn-editor-hud" id="btn-editor-hud" style="display:none;"
+            <button class="btn btn-icon btn-editor-hud" id="btn-editor-hud" style="display:none"
                 title="Voltar ao Editor">🔧</button>
             <button class="btn btn-icon btn-undo" id="btn-undo" title="Desfazer (Ctrl+Z)">⟲</button>
-            <button class="btn btn-icon btn-reset" id="btn-reset" title="Reiniciar">↺</button>
-            <button class="btn btn-icon" id="btn-help" title="Regras">❓</button>
-            <button class="btn btn-icon" id="btn-levels" title="Fases">☰</button>
+            <button class="btn btn-icon btn-pause" id="btn-pause" title="Pausar">⏸</button>
         </div>
     </div>
+
 
     <!-- HUD Superior (Editor) -->
     <div id="editor-hud" style="display:none;">
@@ -147,6 +146,19 @@
 
     <!-- Overlay -->
     <div id="overlay">
+        <!-- Pause Menu Modal -->
+        <div class="modal pause-menu" id="pause-modal" style="display:none;">
+            <h2>⏸ Pausado</h2>
+            <div id="pause-level-info" class="pause-level-info"></div>
+            <div class="pause-actions">
+                <button class="btn btn-accent btn-large" id="btn-resume">▶ Continuar</button>
+                <button class="btn" id="btn-restart-pause">↺ Reiniciar Fase</button>
+                <button class="btn" id="btn-levels-pause">☰ Selecionar Fase</button>
+                <button class="btn" id="btn-help-pause">❓ Ver Regras</button>
+                <button class="btn btn-home" id="btn-home">🏠 Menu Inicial</button>
+            </div>
+        </div>
+
         <!-- Win Modal -->
         <div class="modal win" id="win-modal" style="display:none;">
             <div class="win-header">
@@ -275,6 +287,7 @@
             let currentLevelIndex = 0;
             let statusTimeout = null;
             let isCustomLevel = false;
+            let isTutorialLevel = false;
 
             // Timer
             let levelStartTime = 0, levelElapsed = 0, timerInterval = null;
@@ -351,6 +364,7 @@
                 if (index < 0 || index >= LEVELS.length) return;
                 currentLevelIndex = index;
                 isCustomLevel = false;
+                isTutorialLevel = false;
                 game.save.setCurrentLevel(index);
                 const level = LEVELS[index];
                 game.loadLevel(level);
@@ -361,7 +375,95 @@
                 closeAllModals();
                 startTimer();
                 game.sound.levelStart();
-                if (level.tutorial && level.tutorial.length > 0) startTutorial(level.tutorial); else endTutorial();
+                endTutorial();
+            }
+
+            // Standalone tutorial level — covers all rules
+            // Grid 7x5 with masked cells creating learning islands:
+            //   Island 1 (cols 1-3, row 2): Red + Blue basics
+            //   Island 2 (cols 5-6, rows 1-2): Green (blue neighbors become isolated after)
+            //   Gray at (3,4): removed last
+            const TUTORIAL_LEVEL = {
+                id: "tutorial", name: "Tutorial", category: "Tutorial",
+                description: "Aprenda todas as regras!",
+                gridSize: { cols: 7, rows: 5 }, moveLimit: null, par: 10,
+                tutorial: [
+                    // Welcome
+                    { message: "Bem-vindo ao HexTatics! 🎯\nSeu objetivo: remover TODAS as peças do tabuleiro.", target: "board", action: "read" },
+
+                    // === RED ===
+                    { message: "♦ VERMELHA: pode ser removida quando tem pelo menos 1 vizinha preenchida, mas NÃO todas.\nToque nesta vermelha!", target: { q: 1, r: 2 }, action: "remove" },
+                    { message: "Ótimo! Remova a outra vermelha.", target: { q: 3, r: 2 }, action: "remove" },
+
+                    // === BLUE ===
+                    { message: "● AZUL: só pode ser removida quando está ISOLADA — zero vizinhas preenchidas.\nAgora a azul está sozinha. Remova!", target: { q: 2, r: 2 }, action: "remove" },
+
+                    // === HAND ===
+                    { message: "🖐️ Peças removidas vão para sua MÃO (barra inferior).\nVocê pode recolocá-las no tabuleiro clicando numa peça da mão e depois numa casa vazia.\nEssa mecânica é essencial nas fases avançadas.", target: "board", action: "read" },
+
+                    // === GREEN ===
+                    // G(5,1) q=5 odd → neighbors: (6,1),(6,2),(5,2),(4,2),(4,1),(5,0)
+                    // Valid (unmasked): (5,2)=Blue, (6,1)=Blue → 2 valid, 2 filled → GREEN removable ✓
+                    { message: "■ VERDE: só pode ser removida quando TODAS as vizinhas estão preenchidas.\nEsta verde tem todas as casas ao redor ocupadas — remova!", target: { q: 5, r: 1 }, action: "remove" },
+
+                    // Remove blues (now isolated after green is gone)
+                    // B(5,2) q=5 odd → neighbors: (6,2),(6,3),(5,3),(4,3),(4,2),(5,1)
+                    // Valid: (5,1)=empty, (6,1)? check: (6,1) is NOT a neighbor of (5,2). 
+                    // Only (5,1) is valid+empty → filledCount=0, totalSlots=1 → Blue 0===0 ✓
+                    { message: "Agora a azul está isolada. Remova!", target: { q: 5, r: 2 }, action: "remove" },
+                    // B(6,1) q=6 even → neighbors: (7,0),(7,1),(6,2),(5,1),(5,0),(6,0)
+                    // Valid: (5,1)=empty → filledCount=0, totalSlots=1 → Blue 0===0 ✓
+                    { message: "Esta também. Remova!", target: { q: 6, r: 1 }, action: "remove" },
+
+                    // === YELLOW (text) ===
+                    { message: "▲ AMARELA: precisa de exatamente 3 vizinhas preenchidas, e nenhum par em lados opostos.\nÉ a mais específica do jogo!", target: "board", action: "read" },
+
+                    // === GRAY ===
+                    { message: "▬ CINZA: só pode ser removida quando sobram APENAS cinzas no tabuleiro.\nAgora só tem cinza — remova!", target: { q: 3, r: 4 }, action: "remove" },
+
+                    // === MODIFIERS (text) ===
+                    { message: "🔄 MODIFICADORES: algumas peças têm um círculo colorido pequeno.\nIsso indica que a regra só conta vizinhas DAQUELA cor.\nEx: Vermelha com mod azul → precisa de vizinhas azuis.", target: "board", action: "read" },
+                    { message: "No cinza, o modificador muda o que você precisa eliminar:\nCinza + mod vermelho → remove quando todas as VERMELHAS saírem do tabuleiro.", target: "board", action: "read" },
+
+                    // Farewell
+                    { message: "Parabéns! 🎉 Você aprendeu todas as regras!\n\n♦ Vermelha: 1+ vizinhas (não todas)\n● Azul: 0 vizinhas\n■ Verde: todas vizinhas preenchidas\n▲ Amarela: 3 sem pares opostos\n▬ Cinza: só cinzas restantes\n🔄 Modificador: filtra por cor\n\nBoa sorte!", target: "board", action: "read" },
+                ],
+                mask: [
+                    // cols: 0      1      2      3      4      5      6
+                    [false, false, false, false, false, false, false], // row 0
+                    [false, false, false, false, false, true, true], // row 1
+                    [false, true, true, true, false, true, false], // row 2
+                    [false, false, false, false, false, false, false], // row 3
+                    [false, false, false, true, false, false, false], // row 4
+                ],
+                pieces: [
+                    // Island 1: Red + Blue (row 2, cols 1-3)
+                    { q: 1, r: 2, color: "red" },
+                    { q: 2, r: 2, color: "blue" },
+                    { q: 3, r: 2, color: "red" },
+                    // Island 2: Green with blue neighbors
+                    // G(5,1) surrounded by B(5,2) and B(6,1)
+                    { q: 5, r: 1, color: "green" },
+                    { q: 5, r: 2, color: "blue" },
+                    { q: 6, r: 1, color: "blue" },
+                    // Island 3: Gray (removed last)
+                    { q: 3, r: 4, color: "gray" },
+                ]
+            };
+
+            function loadTutorial() {
+                isTutorialLevel = true;
+                isCustomLevel = false;
+                game.loadLevel(TUTORIAL_LEVEL);
+                showGameUI();
+                document.getElementById("btn-editor-hud").style.display = "none";
+                renderer._resize();
+                updateHUD();
+                updateHand();
+                closeAllModals();
+                startTimer();
+                game.sound.levelStart();
+                startTutorial(TUTORIAL_LEVEL.tutorial);
             }
 
             function loadCustomLevel(level) {
@@ -398,7 +500,6 @@
                 const level = game.currentLevel;
                 if (!level) return;
                 document.getElementById("level-name").textContent = isCustomLevel ? `🔧 ${level.name}` : `${level.id}. ${level.name}`;
-                document.getElementById("level-description").textContent = level.description;
                 const moveEl = document.getElementById("move-counter");
                 if (game.moveLimit) {
                     moveEl.textContent = `${game.moves}/${game.moveLimit}`;
@@ -471,10 +572,30 @@
                 for (let i = confettiPieces.length - 1; i >= 0; i--) { const c = confettiPieces[i]; c.x += c.vx; c.y += c.vy; c.vy += 0.08; c.rot += c.rotV; c.life -= 0.003; if (c.life <= 0 || c.y > window.innerHeight + 20) { confettiPieces.splice(i, 1); continue; } confettiCtx.save(); confettiCtx.translate(c.x, c.y); confettiCtx.rotate(c.rot * Math.PI / 180); confettiCtx.globalAlpha = Math.min(c.life, 1); confettiCtx.fillStyle = c.color; confettiCtx.fillRect(-c.w / 2, -c.h / 2, c.w, c.h); confettiCtx.restore(); }
             }
 
+            // ===================== WELCOME =====================
+            function hideWelcome() {
+                const ws = document.getElementById("welcome-screen");
+                ws.classList.add("hiding");
+                setTimeout(() => ws.style.display = "none", 600);
+            }
+            function showWelcome() {
+                stopTimer();
+                closeAllModals();
+                document.getElementById("hud").style.display = "none";
+                document.getElementById("hand-area").style.display = "none";
+                document.getElementById("editor-hud").style.display = "none";
+                document.getElementById("editor-toolbar").style.display = "none";
+                editor.active = false;
+                const ws = document.getElementById("welcome-screen");
+                ws.style.display = "flex";
+                ws.classList.remove("hiding");
+                updateWelcomeProgress();
+            }
+
             // ===================== MODAIS =====================
             function closeAllModals() {
                 document.getElementById("overlay").classList.remove("active");
-                ["win-modal", "lose-modal", "level-select-modal", "help-modal", "game-complete-modal"].forEach(id => document.getElementById(id).style.display = "none");
+                ["win-modal", "lose-modal", "level-select-modal", "help-modal", "game-complete-modal", "pause-modal"].forEach(id => document.getElementById(id).style.display = "none");
             }
             function showOverlay(modalId) { closeAllModals(); document.getElementById("overlay").classList.add("active"); document.getElementById(modalId).style.display = "block"; }
 
@@ -483,7 +604,7 @@
                 const level = game.currentLevel;
                 const stars = level.par ? game.save.getStars(level.id, level.par) : 3;
 
-                if (!isCustomLevel) {
+                if (!isCustomLevel && !isTutorialLevel) {
                     const isLast = currentLevelIndex >= LEVELS.length - 1;
                     let allComplete = true;
                     LEVELS.forEach(l => { if (!game.save.isCompleted(l.id)) allComplete = false; });
@@ -500,16 +621,21 @@
                 document.getElementById("win-time").textContent = formatTime(levelElapsed);
 
                 const bestMsg = document.getElementById("win-best-msg");
-                if (!isCustomLevel) {
+                if (isTutorialLevel) {
+                    bestMsg.textContent = "🎓 Tutorial completo!";
+                    bestMsg.className = "win-best-msg perfect";
+                } else if (!isCustomLevel) {
                     const best = game.save.getBestMoves(level.id);
                     if (best && best === game.moves && stars === 3) { bestMsg.textContent = "🏅 Solução perfeita!"; bestMsg.className = "win-best-msg perfect"; }
                     else if (best && best < game.moves) { bestMsg.textContent = `Seu recorde: ${best} movimentos`; bestMsg.className = "win-best-msg"; }
                     else { bestMsg.textContent = "✨ Novo recorde!"; bestMsg.className = "win-best-msg new-record"; }
                 } else { bestMsg.textContent = ""; }
 
-                document.getElementById("btn-next-level").style.display = isCustomLevel ? "none" : "inline-block";
-                document.getElementById("btn-back-editor").style.display = isCustomLevel ? "inline-block" : "none";
-                if (!isCustomLevel) {
+                document.getElementById("btn-next-level").style.display = (isCustomLevel && !isTutorialLevel) ? "none" : "inline-block";
+                document.getElementById("btn-back-editor").style.display = (isCustomLevel && !isTutorialLevel) ? "inline-block" : "none";
+                if (isTutorialLevel) {
+                    document.getElementById("btn-next-level").textContent = "🎮 Começar!";
+                } else if (!isCustomLevel) {
                     document.getElementById("btn-next-level").textContent = currentLevelIndex >= LEVELS.length - 1 ? "🏆 Ver Resultados" : "Próxima Fase →";
                 }
 
@@ -561,12 +687,36 @@
                 if (editor.customLevels.length > 0) {
                     customSection.style.display = "block";
                     customGrid.innerHTML = "";
-                    editor.customLevels.forEach(level => {
+                    editor.customLevels.slice().reverse().forEach(level => {
                         const card = document.createElement("div");
                         card.className = "level-card custom-card";
-                        card.innerHTML = `<div class="level-num">🔧</div><div class="level-title">${level.name}</div><div class="custom-card-actions"><button class="btn btn-tiny" data-action="play">▶</button><button class="btn btn-tiny" data-action="edit">✏️</button><button class="btn btn-tiny btn-reset" data-action="delete">✕</button></div>`;
+                        const dateStr = level.createdAt ? new Date(level.createdAt).toLocaleDateString("pt-BR") : "";
+                        const pCount = level.pieceCount || level.pieces.length;
+                        const desc = level.description || `${pCount} peças`;
+                        card.innerHTML = `
+                            <div class="custom-card-header">
+                                <div class="custom-card-icon">🔧</div>
+                                <div class="custom-card-info">
+                                    <div class="custom-card-name">${level.name}</div>
+                                    <div class="custom-card-meta">${pCount} peças · ${level.gridSize.cols}×${level.gridSize.rows}${dateStr ? " · " + dateStr : ""}</div>
+                                    <div class="custom-card-desc">${desc}</div>
+                                </div>
+                            </div>
+                            <div class="custom-card-actions">
+                                <button class="btn btn-tiny btn-accent" data-action="play" title="Jogar">▶</button>
+                                <button class="btn btn-tiny" data-action="edit" title="Editar">✏️</button>
+                                <button class="btn btn-tiny" data-action="share" title="Compartilhar código">📤</button>
+                                <button class="btn btn-tiny" data-action="duplicate" title="Duplicar">📋</button>
+                                <button class="btn btn-tiny btn-reset" data-action="delete" title="Deletar">✕</button>
+                            </div>`;
                         card.querySelector('[data-action="play"]').addEventListener("click", (e) => { e.stopPropagation(); game.sound.click(); loadCustomLevel(level); });
                         card.querySelector('[data-action="edit"]').addEventListener("click", (e) => { e.stopPropagation(); game.sound.click(); editor.loadFromLevel(level); editor.editingId = level.id; enterEditor(); });
+                        card.querySelector('[data-action="share"]').addEventListener("click", (e) => {
+                            e.stopPropagation(); game.sound.click();
+                            const code = Editor.codeFromLevel(level);
+                            navigator.clipboard.writeText(code).then(() => showStatus("📋 Código copiado!", 2000)).catch(() => prompt("Copie:", code));
+                        });
+                        card.querySelector('[data-action="duplicate"]').addEventListener("click", (e) => { e.stopPropagation(); game.sound.click(); editor.duplicateCustomLevel(level.id); showLevelSelect(); showStatus("📋 Fase duplicada!", 1500); });
                         card.querySelector('[data-action="delete"]').addEventListener("click", (e) => { e.stopPropagation(); if (confirm(`Deletar "${level.name}"?`)) { editor.deleteCustomLevel(level.id); showLevelSelect(); } });
                         customGrid.appendChild(card);
                     });
@@ -579,21 +729,13 @@
 
             // ===================== EDITOR =====================
             function enterEditor() {
-                const ws = document.getElementById("welcome-screen");
-                ws.classList.add("hiding");
-                setTimeout(() => ws.style.display = "none", 600);
+                hideWelcome();
                 showEditorUI();
             }
 
             function exitEditor() {
                 editor.active = false;
-                showGameUI();
-                // Show welcome screen
-                const ws = document.getElementById("welcome-screen");
-                ws.style.display = "flex";
-                ws.classList.remove("hiding");
-                document.getElementById("hud").style.display = "none";
-                document.getElementById("hand-area").style.display = "none";
+                showWelcome();
             }
 
             function editorTest() {
@@ -623,6 +765,7 @@
             // ===================== EVENTS =====================
             function setupEventListeners() {
                 // Welcome
+                document.getElementById("btn-tutorial").addEventListener("click", () => { game.sound._init(); game.sound.click(); hideWelcome(); loadTutorial(); });
                 document.getElementById("btn-start").addEventListener("click", () => { game.sound._init(); game.sound.click(); hideWelcome(); loadLevel(0); });
                 document.getElementById("btn-continue").addEventListener("click", () => { game.sound._init(); game.sound.click(); hideWelcome(); loadLevel(currentLevelIndex); });
                 document.getElementById("btn-editor-welcome").addEventListener("click", () => { game.sound._init(); game.sound.click(); editor.reset(); enterEditor(); });
@@ -675,13 +818,28 @@
 
                 // HUD buttons
                 document.getElementById("btn-undo").addEventListener("click", doUndo);
-                document.getElementById("btn-reset").addEventListener("click", doReset);
-                document.getElementById("btn-levels").addEventListener("click", () => { game.sound.click(); showLevelSelect(); });
-                document.getElementById("btn-help").addEventListener("click", () => { game.sound.click(); showOverlay("help-modal"); });
+                document.getElementById("btn-pause").addEventListener("click", () => {
+                    game.sound.click();
+                    const level = game.currentLevel;
+                    if (level) document.getElementById("pause-level-info").textContent = isCustomLevel ? `🔧 ${level.name}` : `Fase ${level.id} — ${level.name}`;
+                    showOverlay("pause-modal");
+                });
                 document.getElementById("btn-editor-hud").addEventListener("click", () => { game.sound.click(); showEditorUI(); });
 
+                // Pause menu
+                document.getElementById("btn-resume").addEventListener("click", () => { game.sound.click(); closeAllModals(); });
+                document.getElementById("btn-restart-pause").addEventListener("click", () => { game.sound.click(); doReset(); });
+                document.getElementById("btn-levels-pause").addEventListener("click", () => { game.sound.click(); closeAllModals(); showLevelSelect(); });
+                document.getElementById("btn-help-pause").addEventListener("click", () => { game.sound.click(); closeAllModals(); showOverlay("help-modal"); });
+                document.getElementById("btn-home").addEventListener("click", () => { game.sound.click(); showWelcome(); });
+
                 // Win modal
-                document.getElementById("btn-next-level").addEventListener("click", () => { game.sound.click(); if (currentLevelIndex < LEVELS.length - 1) loadLevel(currentLevelIndex + 1); else showGameCompleteModal(); });
+                document.getElementById("btn-next-level").addEventListener("click", () => {
+                    game.sound.click();
+                    if (isTutorialLevel) { isTutorialLevel = false; loadLevel(0); }
+                    else if (currentLevelIndex < LEVELS.length - 1) loadLevel(currentLevelIndex + 1);
+                    else showGameCompleteModal();
+                });
                 document.getElementById("btn-replay").addEventListener("click", () => { game.sound.click(); if (isCustomLevel) loadCustomLevel(game.currentLevel); else loadLevel(currentLevelIndex); });
                 document.getElementById("btn-levels-win").addEventListener("click", () => { game.sound.click(); closeAllModals(); showLevelSelect(); });
                 document.getElementById("btn-back-editor").addEventListener("click", () => { game.sound.click(); closeAllModals(); showEditorUI(); });

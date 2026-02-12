@@ -124,6 +124,27 @@ body {
     animation: none;
 }
 
+#welcome-screen .btn-tutorial {
+    font-size: 1em;
+    padding: 12px 36px;
+    border-radius: 50px;
+    background: linear-gradient(135deg, #2a3a5a, #3a4a6a);
+    border: 2px solid rgba(0, 255, 136, 0.3);
+    color: #ccc;
+    cursor: pointer;
+    font-weight: 600;
+    font-family: inherit;
+    transition: all 0.3s;
+    margin: 6px;
+}
+
+#welcome-screen .btn-tutorial:hover {
+    transform: scale(1.05);
+    box-shadow: 0 0 20px rgba(0, 255, 136, 0.15);
+    color: #fff;
+    border-color: var(--accent);
+}
+
 #welcome-screen .btn-play:hover,
 #welcome-screen .btn-continue:hover {
     transform: scale(1.08);
@@ -626,6 +647,49 @@ body {
     color: #ffd700;
     font-weight: 600;
     margin-bottom: 16px;
+}
+
+/* ===================== PAUSE MENU ===================== */
+.btn-pause {
+    background: #2a2a5e;
+    font-size: 1.1em;
+}
+
+.btn-pause:hover {
+    background: #3a3a7a;
+}
+
+.modal.pause-menu {
+    max-width: 320px;
+}
+
+.pause-level-info {
+    font-size: 0.85em;
+    color: var(--text-dim);
+    margin-bottom: 16px;
+    text-align: center;
+}
+
+.pause-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.pause-actions .btn {
+    width: 100%;
+    padding: 12px;
+    font-size: 0.95em;
+    text-align: center;
+}
+
+.btn-home {
+    background: #3a2a1a;
+    border-color: #7a5a3a;
+}
+
+.btn-home:hover {
+    background: #5a3a2a;
 }
 
 /* ===================== LOSE MODAL ===================== */
@@ -1231,13 +1295,56 @@ body {
 
 .custom-card {
     position: relative;
+    text-align: left;
+    padding: 10px 12px !important;
+    display: flex !important;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.custom-card-header {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+}
+
+.custom-card-icon {
+    font-size: 1.4em;
+    line-height: 1;
+    flex-shrink: 0;
+}
+
+.custom-card-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.custom-card-name {
+    font-weight: 700;
+    font-size: 0.9em;
+    color: var(--text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.custom-card-meta {
+    font-size: 0.7em;
+    color: var(--text-dim);
+    margin-top: 2px;
+}
+
+.custom-card-desc {
+    font-size: 0.72em;
+    color: var(--accent);
+    margin-top: 3px;
+    opacity: 0.8;
 }
 
 .custom-card-actions {
     display: flex;
-    gap: 3px;
-    justify-content: center;
-    margin-top: 6px;
+    gap: 4px;
+    justify-content: flex-end;
 }
 
 .custom-card-actions .btn {

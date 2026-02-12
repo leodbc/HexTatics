@@ -108,23 +108,36 @@ class Editor {
 
     toLevel(id) {
         const pieces = [];
+        const colorCounts = {};
         for (const [key, piece] of this.pieces) {
             const [q, r] = key.split(",").map(Number);
             const p = { q, r, color: piece.color };
             if (piece.modifier) p.modifier = piece.modifier;
             pieces.push(p);
+            colorCounts[piece.color] = (colorCounts[piece.color] || 0) + 1;
         }
+        // Auto-generate description from piece breakdown
+        const colorEmoji = { red: "♦", blue: "●", green: "■", yellow: "▲", gray: "▬" };
+        const desc = Object.entries(colorCounts).map(([c, n]) => `${n}${colorEmoji[c] || "?"}`).join(" ") || "Vazia";
+        const hasModifiers = pieces.some(p => p.modifier);
+        const hasHoles = this.mask.some(row => row.some(v => !v));
+        const tags = [];
+        if (hasModifiers) tags.push("🔄");
+        if (hasHoles) tags.push("🕳️");
+        if (this.moveLimit) tags.push("⏳");
+        const description = desc + (tags.length ? " · " + tags.join("") : "");
         return {
             id: id || "custom_test",
             name: this.name || "Fase Personalizada",
             category: "Personalizada",
-            description: "Fase criada pelo jogador",
+            description,
             gridSize: { cols: this.cols, rows: this.rows },
             moveLimit: this.moveLimit,
             par: this.par || Math.max(1, pieces.length),
             mask: this.mask.map(row => [...row]),
             pieces,
             custom: true,
+            pieceCount: pieces.length,
         };
     }
 
@@ -204,16 +217,18 @@ class Editor {
     }
 
     saveCustomLevel() {
+        const now = new Date().toISOString();
         if (this.editingId) {
             const idx = this.customLevels.findIndex(l => l.id === this.editingId);
             if (idx >= 0) {
-                this.customLevels[idx] = this.toLevel(this.editingId);
+                const createdAt = this.customLevels[idx].createdAt || now;
+                this.customLevels[idx] = { ...this.toLevel(this.editingId), createdAt, updatedAt: now };
                 this._persist();
                 return this.customLevels[idx];
             }
         }
         const id = `custom_${Date.now()}`;
-        const level = this.toLevel(id);
+        const level = { ...this.toLevel(id), createdAt: now, updatedAt: now };
         this.editingId = id;
         this.customLevels.push(level);
         this._persist();
@@ -223,6 +238,29 @@ class Editor {
     deleteCustomLevel(id) {
         this.customLevels = this.customLevels.filter(l => l.id !== id);
         this._persist();
+    }
+
+    duplicateCustomLevel(id) {
+        const original = this.customLevels.find(l => l.id === id);
+        if (!original) return null;
+        const newId = `custom_${Date.now()}`;
+        const now = new Date().toISOString();
+        const dup = { ...JSON.parse(JSON.stringify(original)), id: newId, name: original.name + " (cópia)", createdAt: now, updatedAt: now };
+        this.customLevels.push(dup);
+        this._persist();
+        return dup;
+    }
+
+    static codeFromLevel(level) {
+        const colorKey = { red: "r", blue: "b", green: "g", yellow: "y", gray: "x" };
+        const maskStr = level.mask.map(row => row.map(v => v ? "1" : "0").join("")).join(",");
+        const piecesStr = level.pieces.map(p => {
+            let s = colorKey[p.color] + p.q + "." + p.r;
+            if (p.modifier) s += colorKey[p.modifier];
+            return s;
+        }).join(";");
+        const data = [level.name, level.gridSize.cols + "x" + level.gridSize.rows, level.moveLimit || 0, level.par, maskStr, piecesStr].join("|");
+        return "HEX-" + btoa(unescape(encodeURIComponent(data)));
     }
 
     loadCustomLevels() {
