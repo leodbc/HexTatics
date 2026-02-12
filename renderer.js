@@ -119,6 +119,15 @@ class Renderer {
 
         this._updateParticles();
 
+        // Cache removable cells for visual hints
+        this._removableSet = new Set();
+        if (!game.won) {
+            for (const [key] of game.board) {
+                const [q, r] = key.split(",").map(Number);
+                if (game.canRemove(q, r)) this._removableSet.add(key);
+            }
+        }
+
         // Draw cells
         for (let r = 0; r < game.gridSize.rows; r++) {
             for (let q = 0; q < game.gridSize.cols; q++) {
@@ -164,24 +173,29 @@ class Renderer {
                 red: "#CC2222", blue: "#2244BB", green: "#1D8C1D",
                 yellow: "#CCAA00", gray: "#555555",
             };
+            const key = `${q},${r}`;
+            const isRemovable = this._removableSet && this._removableSet.has(key);
 
             ctx.fillStyle = colors[piece.color] || "#555";
             ctx.fill();
 
-            // Highlight on hover
             if (isHovered) {
-                const canRemove = this.game.canRemove(q, r);
-                ctx.strokeStyle = canRemove ? "#00ff88" : "#ff4444";
+                // Hover: bright border + glow
+                ctx.strokeStyle = isRemovable ? "#00ff88" : "#ff4444";
                 ctx.lineWidth = 3;
                 ctx.stroke();
-
-                // Outer glow
                 ctx.save();
-                ctx.shadowColor = canRemove ? "#00ff88" : "#ff4444";
+                ctx.shadowColor = isRemovable ? "#00ff88" : "#ff4444";
                 ctx.shadowBlur = 15;
                 this._drawHexPath(x, y, size);
                 ctx.stroke();
                 ctx.restore();
+            } else if (isRemovable && !this.game.won) {
+                // Removable hint: subtle pulsing green border
+                const pulse = 0.35 + 0.2 * Math.sin(Date.now() / 600);
+                ctx.strokeStyle = `rgba(0, 255, 136, ${pulse})`;
+                ctx.lineWidth = 2;
+                ctx.stroke();
             } else {
                 ctx.strokeStyle = "rgba(255,255,255,0.12)";
                 ctx.lineWidth = 1;

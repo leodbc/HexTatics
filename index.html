@@ -38,9 +38,12 @@
         </div>
         <div class="hud-center">
             <span id="move-counter">0</span>
+            <span id="piece-counter" class="piece-counter"></span>
             <span id="level-timer" class="timer-badge">0:00</span>
         </div>
         <div class="hud-right">
+            <button class="btn btn-icon btn-editor-hud" id="btn-editor-hud" style="display:none;"
+                title="Voltar ao Editor">🔧</button>
             <button class="btn btn-icon btn-undo" id="btn-undo" title="Desfazer (Ctrl+Z)">⟲</button>
             <button class="btn btn-icon btn-reset" id="btn-reset" title="Reiniciar">↺</button>
             <button class="btn btn-icon" id="btn-help" title="Regras">❓</button>
@@ -73,10 +76,7 @@
     <!-- Área do Jogo / Editor (compartilhada) -->
     <div id="game-area">
         <canvas id="game-canvas"></canvas>
-        <div id="tooltip">
-            <div class="tooltip-title"></div>
-            <div class="tooltip-rule"></div>
-        </div>
+
         <div id="tutorial-overlay">
             <div id="tutorial-bubble" style="display:none;">
                 <div class="tutorial-arrow arrow-down"></div>
@@ -122,6 +122,8 @@
                         style="background:#22AA22;"></span></button>
                 <button class="editor-mod" data-mod="yellow"><span class="mod-dot"
                         style="background:#EECC00;"></span></button>
+                <button class="editor-mod" data-mod="gray"><span class="mod-dot"
+                        style="background:#999;"></span></button>
             </div>
         </div>
         <div class="editor-actions">
@@ -317,6 +319,7 @@
                 document.getElementById("hand-area").style.display = "flex";
                 document.getElementById("editor-hud").style.display = "none";
                 document.getElementById("editor-toolbar").style.display = "none";
+                document.getElementById("btn-editor-hud").style.display = isCustomLevel ? "inline-flex" : "none";
                 editor.active = false;
                 renderer._resize();
             }
@@ -404,6 +407,8 @@
                     moveEl.textContent = `${game.moves}`;
                     moveEl.classList.remove("exceeded");
                 }
+                // Remaining pieces count
+                document.getElementById("piece-counter").textContent = `${game.board.size} ⬢`;
             }
 
             function updateHand() {
@@ -436,22 +441,7 @@
                 statusTimeout = setTimeout(() => el.classList.remove("visible"), duration);
             }
 
-            // ===================== TOOLTIP =====================
-            function updateTooltip(px, py, cell) {
-                const tooltip = document.getElementById("tooltip");
-                if (!cell || !game.getPiece(cell.q, cell.r)) { tooltip.classList.remove("visible"); return; }
-                if ('ontouchstart' in window) { tooltip.classList.remove("visible"); return; }
-                const info = game.getPieceInfo(cell.q, cell.r);
-                if (!info) { tooltip.classList.remove("visible"); return; }
-                tooltip.querySelector(".tooltip-title").textContent = `${info.name} ${info.canRemove ? "✅" : "🔒"}`;
-                tooltip.querySelector(".tooltip-rule").textContent = info.rule;
-                let tx = px + 16, ty = py - 60;
-                if (tx + 220 > renderer.displayWidth) tx = px - 230;
-                if (ty < 0) ty = py + 20;
-                tooltip.style.left = tx + "px";
-                tooltip.style.top = ty + "px";
-                tooltip.classList.add("visible");
-            }
+            // Tooltip removed per playtester feedback (unnecessary hover info)
 
             // ===================== TUTORIAL =====================
             function startTutorial(steps) { tutorialActive = true; tutorialSteps = steps; tutorialStep = 0; showTutorialStep(); }
@@ -674,20 +664,21 @@
                     else { if (renderer.hoveredCell) handleInteraction(renderer.hoveredCell); }
                 }, { passive: false });
 
-                // Mouse move
+                // Mouse move (tooltip removed per feedback)
                 canvas.addEventListener("mousemove", (e) => {
                     const rect = canvas.getBoundingClientRect();
                     const px = e.clientX - rect.left, py = e.clientY - rect.top;
                     if (editor.active) { editorHoveredCell = renderer.editorPixelToHex(px, py, editor); }
-                    else { const cell = renderer.pixelToHex(px, py); renderer.hoveredCell = cell; updateTooltip(px, py, cell); }
+                    else { renderer.hoveredCell = renderer.pixelToHex(px, py); }
                 });
-                canvas.addEventListener("mouseleave", () => { renderer.hoveredCell = null; editorHoveredCell = null; document.getElementById("tooltip").classList.remove("visible"); });
+                canvas.addEventListener("mouseleave", () => { renderer.hoveredCell = null; editorHoveredCell = null; });
 
                 // HUD buttons
                 document.getElementById("btn-undo").addEventListener("click", doUndo);
                 document.getElementById("btn-reset").addEventListener("click", doReset);
                 document.getElementById("btn-levels").addEventListener("click", () => { game.sound.click(); showLevelSelect(); });
                 document.getElementById("btn-help").addEventListener("click", () => { game.sound.click(); showOverlay("help-modal"); });
+                document.getElementById("btn-editor-hud").addEventListener("click", () => { game.sound.click(); showEditorUI(); });
 
                 // Win modal
                 document.getElementById("btn-next-level").addEventListener("click", () => { game.sound.click(); if (currentLevelIndex < LEVELS.length - 1) loadLevel(currentLevelIndex + 1); else showGameCompleteModal(); });
@@ -778,7 +769,16 @@
                     const piece = game.getPiece(cell.q, cell.r);
                     if (!piece) {
                         if (game.placePiece(cell.q, cell.r, game.selectedHandPiece)) {
-                            game.sound.place(); renderer.addAnimation(cell.q, cell.r, "fadeIn", 200); renderer.placementMode = false; updateHUD(); updateHand();
+                            game.sound.place(); renderer.addAnimation(cell.q, cell.r, "fadeIn", 200);
+                            // Auto-select next hand piece for faster workflow
+                            if (game.hand.length > 0) {
+                                game.selectedHandPiece = Math.min(game.selectedHandPiece, game.hand.length - 1);
+                                renderer.placementMode = true;
+                            } else {
+                                game.selectedHandPiece = null;
+                                renderer.placementMode = false;
+                            }
+                            updateHUD(); updateHand();
                             if (game.checkWin()) setTimeout(() => showWinModal(), 400);
                             else if (game.moveLimitExceeded) showLoseModal();
                         }
