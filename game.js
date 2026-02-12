@@ -282,6 +282,11 @@ class Game {
                 }
                 return true;
 
+            case "purple":
+                if (filledCount !== 2) return false;
+                // Must be an opposite pair
+                return filledDirs.length === 2 && Game.OPPOSITES[filledDirs[0]] === filledDirs[1];
+
             default:
                 return false;
         }
@@ -357,6 +362,9 @@ class Game {
 
     checkWin() {
         if (this.board.size === 0) {
+            // Check external win hook (e.g. for tutorial completion)
+            if (this.onWinHook && !this.onWinHook()) return false;
+
             this.won = true;
             if (this.currentLevel) {
                 this.save.completeLevel(this.currentLevel.id, this.moves);
@@ -376,6 +384,7 @@ class Game {
             blue: { name: "Azul", rule: "Remove só quando isolada (0 vizinhas)." },
             green: { name: "Verde", rule: "Remove só com TODAS vizinhas preenchidas." },
             yellow: { name: "Amarela", rule: "Remove com exatamente 3 vizinhas sem opostas." },
+            purple: { name: "Roxa", rule: "Remove com exatamente 2 vizinhas em lados opostos." },
             gray: { name: "Cinza", rule: "Remove só quando sobrar apenas cinzas." },
         };
 

@@ -117,7 +117,7 @@ class Editor {
             colorCounts[piece.color] = (colorCounts[piece.color] || 0) + 1;
         }
         // Auto-generate description from piece breakdown
-        const colorEmoji = { red: "♦", blue: "●", green: "■", yellow: "▲", gray: "▬" };
+        const colorEmoji = { red: "♦", blue: "●", green: "■", yellow: "▲", purple: "✦", gray: "▬" };
         const desc = Object.entries(colorCounts).map(([c, n]) => `${n}${colorEmoji[c] || "?"}`).join(" ") || "Vazia";
         const hasModifiers = pieces.some(p => p.modifier);
         const hasHoles = this.mask.some(row => row.some(v => !v));
@@ -156,7 +156,7 @@ class Editor {
 
     exportCode() {
         const level = this.toLevel();
-        const colorKey = { red: "r", blue: "b", green: "g", yellow: "y", gray: "x" };
+        const colorKey = { red: "r", blue: "b", green: "g", yellow: "y", purple: "p", gray: "x" };
         const maskStr = level.mask.map(row => row.map(v => v ? "1" : "0").join("")).join(",");
         const piecesStr = level.pieces.map(p => {
             let s = colorKey[p.color] + p.q + "." + p.r;
@@ -182,7 +182,7 @@ class Editor {
                 const data = decodeURIComponent(escape(atob(input.slice(4))));
                 const parts = data.split("|");
                 if (parts.length < 6) return false;
-                const keyColor = { r: "red", b: "blue", g: "green", y: "yellow", x: "gray" };
+                const keyColor = { r: "red", b: "blue", g: "green", y: "yellow", p: "purple", x: "gray" };
                 const [name, size, limit, par, maskStr, piecesStr] = parts;
                 const [cols, rows] = size.split("x").map(Number);
                 const mask = maskStr.split(",").map(row => row.split("").map(c => c === "1"));
@@ -191,7 +191,7 @@ class Editor {
                     const rest = s.slice(1);
                     const dotIdx = rest.indexOf(".");
                     const afterDot = rest.slice(dotIdx + 1);
-                    const modChar = afterDot.match(/[rbgyx]$/);
+                    const modChar = afterDot.match(/[rbgyxp]$/);
                     const q = parseInt(rest.slice(0, dotIdx));
                     const r = parseInt(modChar ? afterDot.slice(0, -1) : afterDot);
                     const p = { q, r, color };
@@ -252,7 +252,7 @@ class Editor {
     }
 
     static codeFromLevel(level) {
-        const colorKey = { red: "r", blue: "b", green: "g", yellow: "y", gray: "x" };
+        const colorKey = { red: "r", blue: "b", green: "g", yellow: "y", purple: "p", gray: "x" };
         const maskStr = level.mask.map(row => row.map(v => v ? "1" : "0").join("")).join(",");
         const piecesStr = level.pieces.map(p => {
             let s = colorKey[p.color] + p.q + "." + p.r;

@@ -323,4 +323,79 @@ const LEVELS = [
             { q: 3, r: 6, color: "gray" },
         ]
     },
+    // ===== MUNDO 4: TODOS OS PRISMAS =====
+
+    // Fase 13 — Prisma: Introduz a peça Roxa
+    // Sol: G(0,0)→R(1,0)→B(0,1)→P(3,2)→R(3,1)→B(3,3)→Y(5,2)→R(6,3)→R(6,2)→R(5,1)→B(4,1)→Gr(6,4) = 12 mov
+    {
+        id: 13, name: "Prisma", category: "Todos os Prismas",
+        description: "💎 Todas as 6 cores juntas! A Roxa precisa de 2 vizinhas opostas.",
+        gridSize: { cols: 7, rows: 5 },
+        moveLimit: null, par: 12,
+        mask: [
+            [true, true, true, true, true, true, true],
+            [true, true, true, true, true, true, true],
+            [true, true, true, true, true, true, true],
+            [true, true, true, true, true, true, true],
+            [true, true, true, true, true, true, true],
+        ],
+        pieces: [
+            // Cluster A — canto esquerdo
+            { q: 0, r: 0, color: "green" },
+            { q: 1, r: 0, color: "red" },
+            { q: 0, r: 1, color: "blue" },
+            // Cluster B — centro (Purple: N↔S)
+            { q: 3, r: 2, color: "purple" },
+            { q: 3, r: 1, color: "red" },
+            { q: 3, r: 3, color: "blue" },
+            // Cluster C — direita (Yellow: NE,N,SE)
+            { q: 5, r: 2, color: "yellow" },
+            { q: 6, r: 2, color: "red" },
+            { q: 5, r: 1, color: "red" },
+            { q: 6, r: 3, color: "red" },
+            // Suporte
+            { q: 4, r: 1, color: "blue" },
+            // Endgame
+            { q: 6, r: 4, color: "gray" },
+        ]
+    },
+
+    // Fase 14 — Espectro: Desafio final com todas as cores + buracos
+    // Sol: G(0,1)→R(1,0)→R(1,1)→B(0,2)→P(3,3)→R(4,3)→R(2,4)→B(1,4)→B(4,2)→Y(5,4)→R(5,3)→R(6,4)→B(6,5)→Gr(1,6)→Gr(5,6) = 15 mov
+    {
+        id: 14, name: "Espectro", category: "Todos os Prismas",
+        description: "🌈 O espectro completo. Buracos e todas as 6 cores — o desafio final.",
+        gridSize: { cols: 7, rows: 7 },
+        moveLimit: null, par: 15,
+        mask: [
+            [false, true, true, true, true, true, false],
+            [true, true, true, true, true, true, true],
+            [true, true, true, true, true, true, true],
+            [true, true, true, true, true, true, true],
+            [true, true, true, true, true, true, true],
+            [true, true, true, true, true, true, true],
+            [false, true, true, true, true, true, false],
+        ],
+        pieces: [
+            // Cluster A — canto superior esquerdo
+            { q: 0, r: 1, color: "green" },
+            { q: 1, r: 0, color: "red" },
+            { q: 1, r: 1, color: "red" },
+            { q: 0, r: 2, color: "blue" },
+            // Cluster B — centro (Purple: NE↔SW)
+            { q: 3, r: 3, color: "purple" },
+            { q: 4, r: 3, color: "red" },
+            { q: 2, r: 4, color: "red" },
+            { q: 1, r: 4, color: "blue" },
+            { q: 4, r: 2, color: "blue" },
+            // Cluster C — direita (Yellow: NE,SE,N)
+            { q: 5, r: 4, color: "yellow" },
+            { q: 6, r: 4, color: "red" },
+            { q: 5, r: 3, color: "red" },
+            { q: 6, r: 5, color: "blue" },
+            // Endgame — grays
+            { q: 1, r: 6, color: "gray" },
+            { q: 5, r: 6, color: "gray" },
+        ]
+    },
 ];

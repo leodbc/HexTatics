@@ -104,6 +104,8 @@
                         style="background:#22AA22;"></span></button>
                 <button class="editor-tool" data-tool="yellow" title="Amarela ▲"><span class="tool-swatch"
                         style="background:#EECC00;"></span></button>
+                <button class="editor-tool" data-tool="purple" title="Roxa ✦"><span class="tool-swatch"
+                        style="background:#9933CC;"></span></button>
                 <button class="editor-tool" data-tool="gray" title="Cinza ▬"><span class="tool-swatch"
                         style="background:#999;"></span></button>
                 <span class="editor-divider"></span>
@@ -121,6 +123,8 @@
                         style="background:#22AA22;"></span></button>
                 <button class="editor-mod" data-mod="yellow"><span class="mod-dot"
                         style="background:#EECC00;"></span></button>
+                <button class="editor-mod" data-mod="purple"><span class="mod-dot"
+                        style="background:#9933CC;"></span></button>
                 <button class="editor-mod" data-mod="gray"><span class="mod-dot"
                         style="background:#999;"></span></button>
             </div>
@@ -194,7 +198,7 @@
         <!-- Game Complete Modal -->
         <div class="modal game-complete" id="game-complete-modal" style="display:none;">
             <h2>🏆 Mestre Supremo! 🏆</h2>
-            <p class="game-complete-sub">Você completou todas as 12 fases do HexTatics!</p>
+            <p class="game-complete-sub">Você completou todas as 14 fases do HexTatics!</p>
             <div class="stars total-stars" id="total-stars"></div>
             <div class="game-complete-stats"><span id="total-stars-text"></span></div>
             <div class="win-actions">
@@ -257,6 +261,10 @@
                     <div class="rule-text"><strong>Amarela</strong><br>Exatamente 3 vizinhas sem pares opostos.</div>
                 </div>
                 <div class="rule-row">
+                    <div class="rule-swatch" style="background:#9933CC;">✦</div>
+                    <div class="rule-text"><strong>Roxa</strong><br>Exatamente 2 vizinhas em lados opostos.</div>
+                </div>
+                <div class="rule-row">
                     <div class="rule-swatch" style="background:#666;">▬</div>
                     <div class="rule-text"><strong>Cinza</strong><br>Remove só quando sobrar apenas cinzas.</div>
                 </div>
@@ -290,7 +298,7 @@
             let isTutorialLevel = false;
 
             // Timer
-            let levelStartTime = 0, levelElapsed = 0, timerInterval = null;
+            let levelStartTime = 0, levelElapsed = 0, timerInterval = null, pausedAtTime = 0, totalPausedMs = 0;
 
             // Tutorial
             let tutorialActive = false, tutorialSteps = [], tutorialStep = 0;
@@ -481,7 +489,9 @@
             }
 
             // ===================== TIMER =====================
-            function startTimer() { clearInterval(timerInterval); levelStartTime = Date.now(); levelElapsed = 0; timerInterval = setInterval(() => { if (game.won) return; levelElapsed = Math.floor((Date.now() - levelStartTime) / 1000); document.getElementById("level-timer").textContent = formatTime(levelElapsed); }, 1000); }
+            function startTimer() { clearInterval(timerInterval); levelStartTime = Date.now(); levelElapsed = 0; totalPausedMs = 0; pausedAtTime = 0; timerInterval = setInterval(() => { if (game.won) return; levelElapsed = Math.floor((Date.now() - levelStartTime - totalPausedMs) / 1000); document.getElementById("level-timer").textContent = formatTime(levelElapsed); }, 1000); }
+            function pauseTimer() { if (!pausedAtTime) pausedAtTime = Date.now(); }
+            function resumeTimer() { if (pausedAtTime) { totalPausedMs += Date.now() - pausedAtTime; pausedAtTime = 0; } }
             function stopTimer() { clearInterval(timerInterval); }
             function formatTime(s) { return `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, "0")}`; }
 
@@ -516,7 +526,7 @@
             function updateHand() {
                 const container = document.getElementById("hand-pieces");
                 container.innerHTML = "";
-                const pieceColors = { red: "#DD2222", blue: "#2244CC", green: "#22AA22", yellow: "#EECC00", gray: "#999999" };
+                const pieceColors = { red: "#DD2222", blue: "#2244CC", green: "#22AA22", yellow: "#EECC00", purple: "#9933CC", gray: "#999999" };
                 game.hand.forEach((piece, i) => {
                     const el = document.createElement("div");
                     el.className = "hand-piece";
@@ -546,8 +556,37 @@
             // Tooltip removed per playtester feedback (unnecessary hover info)
 
             // ===================== TUTORIAL =====================
-            function startTutorial(steps) { tutorialActive = true; tutorialSteps = steps; tutorialStep = 0; showTutorialStep(); }
-            function endTutorial() { tutorialActive = false; tutorialSteps = []; tutorialStep = 0; document.getElementById("tutorial-bubble").style.display = "none"; }
+            // ===================== TUTORIAL =====================
+            function startTutorial(steps) {
+                tutorialActive = true;
+                tutorialSteps = steps;
+                tutorialStep = 0;
+                showTutorialStep();
+
+                // Hook to prevent win while tutorial is active
+                game.onWinHook = () => {
+                    // Only allow win if tutorial is fully complete
+                    if (tutorialActive && tutorialStep < tutorialSteps.length) {
+                        return false;
+                    }
+                    return true;
+                };
+            }
+
+            function endTutorial() {
+                tutorialActive = false;
+                tutorialSteps = [];
+                tutorialStep = 0;
+                document.getElementById("tutorial-bubble").style.display = "none";
+                game.onWinHook = null; // Clear hook
+
+                // If board is empty at the end of tutorial, trigger win sequence now
+                if (game.board.size === 0) {
+                    game.checkWin();
+                    showWinModal();
+                }
+            }
+
             function showTutorialStep() {
                 if (tutorialStep >= tutorialSteps.length) { endTutorial(); return; }
                 const step = tutorialSteps[tutorialStep];
@@ -555,11 +594,77 @@
                 const text = document.getElementById("tutorial-text");
                 const btn = document.getElementById("tutorial-btn");
                 text.textContent = step.message; bubble.style.display = "block";
-                if (step.target === "board") { bubble.style.left = "50%"; bubble.style.top = "30%"; bubble.style.transform = "translateX(-50%)"; btn.textContent = tutorialStep < tutorialSteps.length - 1 ? "Entendi →" : "Começar! 🎮"; btn.style.display = "block"; }
-                else if (step.target && step.target.q !== undefined) { const { x, y } = renderer.hexToPixel(step.target.q, step.target.r); let bx = x - 130, by = y - 120; if (bx < 10) bx = 10; if (bx + 260 > renderer.displayWidth - 10) bx = renderer.displayWidth - 270; if (by < 10) by = y + 50; bubble.style.left = bx + "px"; bubble.style.top = by + "px"; bubble.style.transform = "none"; btn.style.display = (step.action === "remove" || step.action === "place") ? "none" : "block"; btn.textContent = "Entendi →"; }
+
+                if (step.target === "board") {
+                    bubble.style.left = "50%"; bubble.style.top = "30%"; bubble.style.transform = "translateX(-50%)";
+                    // Last step special button
+                    const isLast = tutorialStep === tutorialSteps.length - 1;
+                    btn.textContent = isLast ? "Começar! 🎮" : "Entendi →";
+                    btn.style.display = "block";
+                }
+                else if (step.target && step.target.q !== undefined) {
+                    const { x, y } = renderer.hexToPixel(step.target.q, step.target.r);
+                    let bx = x - 130, by = y - 120;
+                    if (bx < 10) bx = 10;
+                    if (bx + 260 > renderer.displayWidth - 10) bx = renderer.displayWidth - 270;
+                    if (by < 10) by = y + 50;
+                    bubble.style.left = bx + "px"; bubble.style.top = by + "px"; bubble.style.transform = "none";
+                    btn.style.display = (step.action === "remove" || step.action === "place") ? "none" : "block";
+                    btn.textContent = "Entendi →";
+                }
             }
+
             function advanceTutorial() { tutorialStep++; if (tutorialStep >= tutorialSteps.length) endTutorial(); else showTutorialStep(); }
-            function checkTutorialAction(q, r, actionType) { if (!tutorialActive || tutorialStep >= tutorialSteps.length) return true; const step = tutorialSteps[tutorialStep]; if (!step.target || step.target === "board") return true; if (step.action !== actionType) return false; if (step.target.q === q && step.target.r === r) { setTimeout(() => advanceTutorial(), 300); return true; } return false; }
+
+            function checkTutorialAction(q, r, actionType) {
+                if (!tutorialActive || tutorialStep >= tutorialSteps.length) return true;
+                const step = tutorialSteps[tutorialStep];
+                if (!step.target || step.target === "board") return true;
+                if (step.action !== actionType) return false;
+
+                if (step.target.q === q && step.target.r === r) {
+                    // Action valid for tutorial step.
+                    // If it's a 'remove' action, onWinHook will handle logic if board becomes empty.
+                    // If board NOT empty, we still advance.
+                    // Wait, if board empty -> checkWin -> onWinHook -> returns false -> advanceTutorial (via hook).
+                    // If board NOT empty -> checkWin false -> we must advance here.
+
+                    // But if board IS empty, onWinHook handles it.
+                    // To avoid double advance, let's verify.
+                    // If I advance here, and hook advances... double jump.
+
+                    // Logic:
+                    // 1. Action valid. Return true executes the action (removePiece).
+                    // 2. removePiece calls checkWin.
+                    // 3. checkWin calls onWinHook.
+                    // 4. if board empty, hook advances.
+                    // 5. if board NOT empty, we return here and... need to advance?
+
+                    // Yes, we need to advance if board is not empty.
+                    // But checkTutorialAction returns true/false to ALLOW/DENY action.
+                    // It doesn't execute action.
+                    // The action is executed by caller (handleInteraction).
+
+                    // So:
+                    // handleInteraction calls checkTutorialAction -> true.
+                    // removePiece executes.
+                    // removePiece calls checkWin.
+                    // checkWin calls onWinHook.
+
+                    // If board empty: onWinHook returns false AND advances.
+                    // If board NOT empty: checkWin returns false.
+                    // ... WE NEVER ADVANCE for non-winning moves!
+
+                    // I need to advance here via setTimeout regardless?
+                    // NO. If onWinHook advances, I shouldn't.
+
+                    // Let's make onWinHook ONLY return false. 
+                    // And let checkTutorialAction ALWAYS advance.
+                    setTimeout(() => advanceTutorial(), 300);
+                    return true;
+                }
+                return false;
+            }
 
             // ===================== CONFETTI =====================
             function spawnConfetti() {
@@ -821,6 +926,7 @@
                 document.getElementById("btn-undo").addEventListener("click", doUndo);
                 document.getElementById("btn-pause").addEventListener("click", () => {
                     game.sound.click();
+                    pauseTimer();
                     const level = game.currentLevel;
                     if (level) document.getElementById("pause-level-info").textContent = isCustomLevel ? `🔧 ${level.name}` : `Fase ${level.id} — ${level.name}`;
                     showOverlay("pause-modal");
@@ -828,7 +934,7 @@
                 document.getElementById("btn-editor-hud").addEventListener("click", () => { game.sound.click(); showEditorUI(); });
 
                 // Pause menu
-                document.getElementById("btn-resume").addEventListener("click", () => { game.sound.click(); closeAllModals(); });
+                document.getElementById("btn-resume").addEventListener("click", () => { game.sound.click(); resumeTimer(); closeAllModals(); });
                 document.getElementById("btn-restart-pause").addEventListener("click", () => { game.sound.click(); doReset(); });
                 document.getElementById("btn-levels-pause").addEventListener("click", () => { game.sound.click(); closeAllModals(); showLevelSelect(); });
                 document.getElementById("btn-help-pause").addEventListener("click", () => { game.sound.click(); closeAllModals(); showOverlay("help-modal"); });
@@ -920,8 +1026,6 @@
                 window.addEventListener("resize", () => renderer._resize());
             }
 
-            function hideWelcome() { const ws = document.getElementById("welcome-screen"); ws.classList.add("hiding"); setTimeout(() => ws.style.display = "none", 600); }
-
             function handleInteraction(cell) {
                 if (game.won) return;
                 if (game.selectedHandPiece !== null) {
@@ -953,15 +1057,22 @@
                 if (!piece) return;
                 if (game.canRemove(cell.q, cell.r)) {
                     if (tutorialActive && !checkTutorialAction(cell.q, cell.r, "remove")) { showStatus("Siga o tutorial!", 1500); game.sound.error(); return; }
-                    game.sound.remove(); renderer.addAnimation(cell.q, cell.r, "fadeOut", 200); renderer.spawnRemoveParticles(cell.q, cell.r, piece.color);
-                    setTimeout(() => { game.removePiece(cell.q, cell.r); updateHUD(); updateHand(); if (game.checkWin()) setTimeout(() => showWinModal(), 400); else if (game.moveLimitExceeded) showLoseModal(); }, 150);
+                    // Remove imediatamente do estado para evitar race condition em cliques rápidos
+                    const removedColor = piece.color;
+                    game.removePiece(cell.q, cell.r);
+                    game.sound.remove(); renderer.addAnimation(cell.q, cell.r, "fadeOut", 200); renderer.spawnRemoveParticles(cell.q, cell.r, removedColor);
+                    updateHUD(); updateHand();
+                    if (game.checkWin()) setTimeout(() => showWinModal(), 400);
+                    else if (game.moveLimitExceeded) showLoseModal();
                 } else { game.sound.error(); showStatus("Esta peça não pode ser removida agora!", 1800); }
             }
 
             function doUndo() { if (game.undo()) { game.sound.undo(); renderer.placementMode = false; closeAllModals(); updateHUD(); updateHand(); } }
             function doReset() {
                 game.sound.click(); game.reset(); renderer.placementMode = false; renderer._resize(); closeAllModals(); startTimer(); updateHUD(); updateHand();
-                if (!isCustomLevel) { const level = LEVELS[currentLevelIndex]; if (level.tutorial) startTutorial(level.tutorial); }
+                endTutorial();
+                if (isTutorialLevel) { startTutorial(TUTORIAL_LEVEL.tutorial); }
+                else if (!isCustomLevel) { const level = LEVELS[currentLevelIndex]; if (level.tutorial) startTutorial(level.tutorial); }
             }
 
             init();

@@ -171,7 +171,7 @@ class Renderer {
             // Piece colors
             const colors = {
                 red: "#CC2222", blue: "#2244BB", green: "#1D8C1D",
-                yellow: "#CCAA00", gray: "#555555",
+                yellow: "#CCAA00", purple: "#9933CC", gray: "#555555",
             };
             const key = `${q},${r}`;
             const isRemovable = this._removableSet && this._removableSet.has(key);
@@ -207,14 +207,14 @@ class Renderer {
             ctx.font = `bold ${Math.max(size * 0.45, 10)}px 'Segoe UI', system-ui, sans-serif`;
             ctx.textAlign = "center";
             ctx.textBaseline = "middle";
-            const symbols = { red: "♦", blue: "●", green: "■", yellow: "▲", gray: "▬" };
+            const symbols = { red: "♦", blue: "●", green: "■", yellow: "▲", purple: "✦", gray: "▬" };
             ctx.fillText(symbols[piece.color] || "?", x, y);
 
             // Modifier dot
             if (piece.modifier) {
                 const modColors = {
                     red: "#FF4444", blue: "#4488FF", green: "#44DD44",
-                    yellow: "#FFDD44", gray: "#AAAAAA",
+                    yellow: "#FFDD44", purple: "#BB66FF", gray: "#AAAAAA",
                 };
                 const dotR = Math.max(size * 0.16, 4);
                 ctx.beginPath();
@@ -275,7 +275,7 @@ class Renderer {
         const { x, y } = this.hexToPixel(q, r);
         const colors = {
             red: "#ff4444", blue: "#4488ff", green: "#44dd44",
-            yellow: "#ffdd44", gray: "#aaaaaa",
+            yellow: "#ffdd44", purple: "#bb66ff", gray: "#aaaaaa",
         };
         const c = colors[color] || "#ffffff";
 
@@ -353,8 +353,8 @@ class Renderer {
         this._editorOX = ox;
         this._editorOY = oy;
 
-        const COLORS = { red: "#DD2222", blue: "#2244CC", green: "#22AA22", yellow: "#EECC00", gray: "#999999" };
-        const SYMBOLS = { red: "♦", blue: "●", green: "■", yellow: "▲", gray: "▬" };
+        const COLORS = { red: "#DD2222", blue: "#2244CC", green: "#22AA22", yellow: "#EECC00", purple: "#9933CC", gray: "#999999" };
+        const SYMBOLS = { red: "♦", blue: "●", green: "■", yellow: "▲", purple: "✦", gray: "▬" };
 
         for (let r = 0; r < rows; r++) {
             for (let q = 0; q < cols; q++) {

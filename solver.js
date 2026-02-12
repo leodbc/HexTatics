@@ -36,8 +36,8 @@ function solve(levelId) {
         const current = queue.shift();
         const g = current.game;
 
-        // Verifica vitória
-        if (g.board.size === 0 && g.hand.length === 0) {
+        // Verifica vitória (board vazio = vitória, independente da mão)
+        if (g.board.size === 0) {
             const elapsed = ((performance.now() - startTime) / 1000).toFixed(2);
             console.log(`✅ Solução encontrada em ${current.actions.length} movimentos! (${iterations} estados explorados, ${elapsed}s)`);
             console.log("Ações:", current.actions);
