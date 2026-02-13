@@ -1895,6 +1895,10 @@ body {
 
 /* ===================== TUTORIAL MOBILE POSITION ===================== */
 @media (max-width: 768px) {
+    body.tutorial-active #game-area {
+        padding-bottom: calc(300px + env(safe-area-inset-bottom));
+    }
+
     #tutorial-wizard {
         top: auto;
         bottom: calc(78px + env(safe-area-inset-bottom));

@@ -231,12 +231,14 @@
             function startTutorialWizard() {
                 tutorialActive = true;
                 game.onWinHook = null;
+                document.body.classList.add("tutorial-active");
                 document.getElementById("tutorial-wizard").style.display = "block";
                 updateTutorialWizard();
             }
 
             function endTutorialWizard(startCampaign) {
                 tutorialActive = false;
+                document.body.classList.remove("tutorial-active");
                 tutorialPhases = [];
                 tutorialPhaseIndex = 0;
                 tutorialActionIndex = 0;
