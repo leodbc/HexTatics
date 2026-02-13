@@ -62,8 +62,28 @@ class Renderer {
         // Fit to screen with padding
         const padX = 30;
         const padY = 30;
-        const scaleX = (this.displayWidth - padX * 2) / gridW;
-        const scaleY = (this.displayHeight - padY * 2) / gridH;
+
+        let topInset = 0;
+        let bottomInset = 0;
+        const isMobile = window.matchMedia && window.matchMedia("(max-width: 768px)").matches;
+        const tutorialActive = document.body.classList.contains("tutorial-active");
+
+        if (isMobile && tutorialActive) {
+            const tutorialEl = document.getElementById("tutorial-wizard");
+            const handEl = document.getElementById("hand-area");
+            if (tutorialEl && tutorialEl.style.display !== "none") {
+                bottomInset += tutorialEl.getBoundingClientRect().height + 16;
+            }
+            if (handEl && handEl.style.display !== "none") {
+                bottomInset += handEl.getBoundingClientRect().height + 12;
+            }
+            topInset = 4;
+        }
+
+        const usableWidth = Math.max(this.displayWidth, 120);
+        const usableHeight = Math.max(this.displayHeight - topInset - bottomInset, 120);
+        const scaleX = (usableWidth - padX * 2) / gridW;
+        const scaleY = (usableHeight - padY * 2) / gridH;
         const scale = Math.min(scaleX, scaleY, 1.8);
 
         this.hexSize = baseSize * scale;
@@ -73,8 +93,8 @@ class Renderer {
         const actualGridW = (cols - 1) * (3 / 2 * size) + 2 * size;
         const actualGridH = rows * (Math.sqrt(3) * size) + (Math.sqrt(3) / 2 * size);
 
-        this.offsetX = (this.displayWidth - actualGridW) / 2 + size;
-        this.offsetY = (this.displayHeight - actualGridH) / 2 + (Math.sqrt(3) / 2 * size);
+        this.offsetX = (usableWidth - actualGridW) / 2 + size;
+        this.offsetY = topInset + (usableHeight - actualGridH) / 2 + (Math.sqrt(3) / 2 * size);
     }
 
     // ===================== HEX MATH =====================

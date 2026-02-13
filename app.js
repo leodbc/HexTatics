@@ -233,6 +233,7 @@
                 game.onWinHook = null;
                 document.body.classList.add("tutorial-active");
                 document.getElementById("tutorial-wizard").style.display = "block";
+                renderer._resize();
                 updateTutorialWizard();
             }
 
