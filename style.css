@@ -1937,3 +1937,118 @@ body {
         font-size: 0.78em;
     }
 }
+
+/* ===================== COMMUNITY SCREEN ===================== */
+#community-screen {
+    position: fixed;
+    inset: 0;
+    background: radial-gradient(ellipse at center, #1a1a3e 0%, #0f0f1a 70%);
+    display: flex;
+    flex-direction: column;
+    z-index: 180;
+    padding: 16px;
+    gap: 10px;
+}
+
+#community-screen h2 {
+    font-size: 1.2em;
+    color: #fff;
+    margin: 0;
+}
+
+.community-tabs {
+    display: flex;
+    gap: 8px;
+}
+
+.community-tab.active {
+    border-color: var(--accent);
+    box-shadow: 0 0 14px var(--accent-glow);
+    background: linear-gradient(135deg, #0f3460, #533483);
+}
+
+.community-content {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: rgba(22, 33, 62, 0.55);
+    padding: 10px;
+}
+
+.community-grid {
+    display: grid;
+    grid-template-columns: repeat(1, minmax(0, 1fr));
+    gap: 10px;
+}
+
+.map-card {
+    background: rgba(15, 52, 96, 0.36);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.map-card-title {
+    font-size: 0.96em;
+    font-weight: 700;
+    color: #fff;
+}
+
+.map-card-author,
+.map-card-meta {
+    font-size: 0.78em;
+    color: var(--text-dim);
+}
+
+.map-card-actions {
+    display: grid;
+    grid-template-columns: 1.2fr 1fr 0.7fr 0.7fr;
+    gap: 6px;
+}
+
+.map-card-actions .btn {
+    width: 100%;
+    min-height: 34px;
+    font-size: 0.78em;
+    padding: 5px 6px;
+}
+
+.community-actions {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.loading,
+.error-state,
+.empty-state {
+    font-size: 0.86em;
+    color: var(--text-dim);
+    text-align: center;
+    padding: 18px 8px;
+}
+
+.error-state .btn {
+    margin-top: 10px;
+}
+
+@media (min-width: 769px) {
+    #community-screen {
+        padding: 20px;
+    }
+
+    .community-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (min-width: 1100px) {
+    .community-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+}

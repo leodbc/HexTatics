@@ -27,8 +27,31 @@
         </div>
         <button class="btn-tutorial" id="btn-tutorial">📖 Tutorial</button>
         <button class="btn-play" id="btn-start">▶ Jogar</button>
+        <button class="btn-tutorial" id="btn-maps">🌍 Mapas</button>
         <button class="btn-continue" id="btn-continue" style="display:none;">▶ Continuar</button>
         <button class="btn-editor-welcome" id="btn-editor-welcome">🔧 Criar Fase</button>
+    </div>
+
+    <!-- Comunidade de Mapas -->
+    <div id="community-screen" style="display:none;">
+        <h2>🌍 Mapas da Comunidade</h2>
+        <div class="community-tabs">
+            <button class="btn community-tab active" id="community-tab-recent" data-tab="recent">Recentes</button>
+            <button class="btn community-tab" id="community-tab-hot" data-tab="hot">Em Alta</button>
+        </div>
+        <div class="community-content" id="community-content">
+            <div class="loading" id="community-loading" style="display:none;">Carregando mapas...</div>
+            <div class="error-state" id="community-error" style="display:none;">
+                <div>⚠️ Não foi possível carregar. Tente novamente.</div>
+                <button class="btn" id="community-retry">Tentar novamente</button>
+            </div>
+            <div class="empty-state" id="community-empty" style="display:none;">🗺️ Nenhum mapa encontrado ainda. Seja o primeiro!</div>
+            <div class="community-grid" id="community-grid"></div>
+        </div>
+        <div class="community-actions">
+            <button class="btn" id="community-load-more" style="display:none;">Carregar mais</button>
+            <button class="btn" id="community-back">← Voltar</button>
+        </div>
     </div>
 
     <!-- HUD Superior (Jogo) -->
@@ -140,6 +163,7 @@
             <div class="editor-buttons">
                 <button class="btn btn-accent" id="editor-test">▶ Testar</button>
                 <button class="btn" id="editor-save">💾 Salvar</button>
+                <button class="btn" id="editor-publish">📤 Publicar</button>
                 <button class="btn" id="editor-export">📤</button>
                 <button class="btn" id="editor-import">📥</button>
             </div>
@@ -191,6 +215,8 @@
                 <div class="win-secondary">
                     <button class="btn" id="btn-replay">↺ Jogar Novamente</button>
                     <button class="btn" id="btn-levels-win">☰ Fases</button>
+                    <button class="btn" id="btn-like-map" style="display:none;">❤️ Curtir</button>
+                    <button class="btn" id="btn-publish-win" style="display:none;">📤 Publicar na Comunidade</button>
                     <button class="btn" id="btn-back-editor" style="display:none;">🔧 Voltar ao Editor</button>
                 </div>
             </div>
@@ -289,6 +315,37 @@
             </div>
             <button class="btn" id="btn-close-help">✕ Fechar</button>
         </div>
+
+        <!-- Publish Modal -->
+        <div class="modal publish-modal" id="publish-modal" style="display:none;">
+            <h2>📤 Publicar na Comunidade</h2>
+            <p id="publish-preview"></p>
+            <label>Nickname (opcional)
+                <input type="text" id="publish-author" maxlength="20" placeholder="Anônimo" class="editor-name-input">
+            </label>
+            <div class="level-select-actions">
+                <button class="btn btn-accent" id="publish-confirm">Publicar</button>
+                <button class="btn" id="publish-cancel">Cancelar</button>
+            </div>
+        </div>
+
+        <!-- Report Modal -->
+        <div class="modal" id="report-modal" style="display:none;">
+            <h2>🚩 Denunciar mapa</h2>
+            <select id="report-reason" class="editor-name-input" style="width:100%;">
+                <option value="spam">Spam</option>
+                <option value="inappropriate">Inapropriado</option>
+                <option value="impossible">Impossível</option>
+                <option value="other">Outro</option>
+            </select>
+            <label>Detalhes (opcional)
+                <input type="text" id="report-detail" maxlength="120" class="editor-name-input" style="width:100%;" placeholder="Descreva rapidamente">
+            </label>
+            <div class="level-select-actions">
+                <button class="btn btn-accent" id="report-confirm">Enviar denúncia</button>
+                <button class="btn" id="report-cancel">Cancelar</button>
+            </div>
+        </div>
     </div>
 
     <script src="levels.js"></script>
@@ -297,6 +354,11 @@
     <script src="solver.js"></script>
     <script src="editor.js"></script>
     <script src="tutorial_wizard.js"></script>
+    <script src="api.js"></script>
+    <script>
+        window.COMMUNITY_ENABLED = true;
+        window.COMMUNITY_API_BASE = "https://qxontsndhwvwwhvneqmc.functions.supabase.co";
+    </script>
     <script src="app.js"></script>
 </body>
 

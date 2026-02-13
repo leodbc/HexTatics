@@ -1,0 +1,28 @@
+project_id = "qxontsndhwvwwhvneqmc"
+
+[api]
+enabled = true
+port = 54321
+schemas = ["public"]
+extra_search_path = ["public"]
+max_rows = 1000
+
+[db]
+port = 54322
+major_version = 17
+
+[functions.validate-map]
+verify_jwt = false
+
+[functions.verify-solvability]
+verify_jwt = false
+
+[functions.v1]
+verify_jwt = false
+
+[realtime]
+enabled = false
+
+[studio]
+enabled = true
+port = 54323

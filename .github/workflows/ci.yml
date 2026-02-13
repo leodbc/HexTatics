@@ -1,0 +1,24 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Run community tests
+        run: node tests/run-tests.js
+
+      - name: Solver smoke
+        run: |
+          node -e "const fs=require('fs');const vm=require('vm');const {performance}=require('perf_hooks');global.performance=performance;global.window={};global.localStorage={_data:{},getItem(k){return this._data[k]??null;},setItem(k,v){this._data[k]=String(v);}};['levels.js','game.js','solver.js'].forEach(f=>vm.runInThisContext(fs.readFileSync(f,'utf8'),{filename:f}));[11,12,13,14].forEach(id=>{const r=solve(id);if(!r){throw new Error('Level '+id+' unsolved')}});console.log('Solver smoke passed');"

@@ -6,6 +6,13 @@
             const renderer = new Renderer(canvas, game);
             const editor = new Editor();
 
+            const params = new URLSearchParams(window.location.search);
+            const COMMUNITY_ENABLED = (window.COMMUNITY_ENABLED ?? false) || params.get("community") === "true";
+            const COMMUNITY_API_BASE = window.COMMUNITY_API_BASE || "";
+            const api = (COMMUNITY_ENABLED && window.HexTaticsAPI && COMMUNITY_API_BASE)
+                ? new window.HexTaticsAPI(COMMUNITY_API_BASE)
+                : null;
+
             let currentLevelIndex = 0;
             let statusTimeout = null;
             let isCustomLevel = false;
@@ -30,8 +37,21 @@
             // Editor hover
             let editorHoveredCell = null;
 
+            // Community
+            let communityTab = "recent";
+            let communityCursor = null;
+            let communityLoading = false;
+            let currentFeedMaps = [];
+            let pendingReportMapId = null;
+            let pendingPublishLevel = null;
+            let currentCommunityMapMeta = null;
+
             // ===================== INIT =====================
             function init() {
+                if (!COMMUNITY_ENABLED) {
+                    const mapsBtn = document.getElementById("btn-maps");
+                    if (mapsBtn) mapsBtn.style.display = "none";
+                }
                 const saved = game.save.getCurrentLevel();
                 currentLevelIndex = (saved >= 0 && saved < LEVELS.length) ? saved : 0;
                 const hasProgress = Object.keys(game.save.data.completed).length > 0;
@@ -41,7 +61,30 @@
                     updateWelcomeProgress();
                 }
                 setupEventListeners();
+                handleMapImportFromUrl();
                 gameLoop();
+            }
+
+            async function handleMapImportFromUrl() {
+                const mapParam = params.get("map");
+                if (!mapParam) return;
+                if (!api) {
+                    showStatus("Comunidade indisponível no momento.", 2400);
+                    return;
+                }
+                try {
+                    showStatus("Carregando mapa compartilhado...", 1500);
+                    const res = await api.getMap(mapParam);
+                    const map = res.data;
+                    if (!map || !map.level_json) {
+                        showStatus("Mapa não encontrado.", 2200);
+                        return;
+                    }
+                    hideWelcome();
+                    loadCommunityMap(map);
+                } catch (err) {
+                    showStatus("Não foi possível abrir o mapa compartilhado.", 2400);
+                }
             }
 
             function updateWelcomeProgress() {
@@ -90,6 +133,7 @@
             function loadLevel(index) {
                 if (index < 0 || index >= LEVELS.length) return;
                 stopConfetti();
+                currentCommunityMapMeta = null;
                 currentLevelIndex = index;
                 isCustomLevel = false;
                 isTutorialLevel = false;
@@ -109,6 +153,7 @@
             const TUTORIAL_WIZARD = window.TUTORIAL_WIZARD || [];
 
             function loadTutorial() {
+                currentCommunityMapMeta = null;
                 isTutorialLevel = true;
                 isCustomLevel = false;
                 tutorialPhases = TUTORIAL_WIZARD;
@@ -395,6 +440,8 @@
                 stopTimer();
                 if (tutorialActive) endTutorialWizard(false);
                 closeAllModals();
+                const community = document.getElementById("community-screen");
+                if (community) community.style.display = "none";
                 document.getElementById("hud").style.display = "none";
                 document.getElementById("hand-area").style.display = "none";
                 document.getElementById("editor-hud").style.display = "none";
@@ -406,10 +453,293 @@
                 updateWelcomeProgress();
             }
 
+            // ===================== COMMUNITY =====================
+            function showCommunityScreen() {
+                hideWelcome();
+                closeAllModals();
+                document.getElementById("hud").style.display = "none";
+                document.getElementById("hand-area").style.display = "none";
+                document.getElementById("editor-hud").style.display = "none";
+                document.getElementById("editor-toolbar").style.display = "none";
+                document.getElementById("community-screen").style.display = "flex";
+                editor.active = false;
+                loadCommunityMaps(true);
+            }
+
+            function setCommunityState(state) {
+                const loading = document.getElementById("community-loading");
+                const error = document.getElementById("community-error");
+                const empty = document.getElementById("community-empty");
+                const grid = document.getElementById("community-grid");
+                loading.style.display = state === "loading" ? "block" : "none";
+                error.style.display = state === "error" ? "block" : "none";
+                empty.style.display = state === "empty" ? "block" : "none";
+                grid.style.display = state === "ready" ? "grid" : "none";
+            }
+
+            function getCachedFeed(tab) {
+                try {
+                    const raw = sessionStorage.getItem("hextatics_feed_cache");
+                    if (!raw) return null;
+                    const cache = JSON.parse(raw);
+                    if (cache.tab !== tab) return null;
+                    if ((Date.now() - cache.timestamp) > 5 * 60 * 1000) return null;
+                    return cache;
+                } catch {
+                    return null;
+                }
+            }
+
+            function setCachedFeed(tab, data, nextCursor) {
+                try {
+                    sessionStorage.setItem("hextatics_feed_cache", JSON.stringify({
+                        tab,
+                        timestamp: Date.now(),
+                        data,
+                        nextCursor,
+                    }));
+                } catch {
+                    // ignore cache errors
+                }
+            }
+
+            function normalizeMapItem(item) {
+                return {
+                    id: item.id,
+                    slug: item.slug,
+                    title: item.title || "Sem título",
+                    author_name: item.author_name || "Anônimo",
+                    likes_count: item.likes_count || 0,
+                    win_rate: item.win_rate ?? item.stats?.win_rate ?? 0,
+                    piece_count: item.piece_count || item.level_json?.pieceCount || item.level_json?.pieces?.length || 0,
+                    grid_cols: item.grid_cols || item.level_json?.gridSize?.cols || 0,
+                    grid_rows: item.grid_rows || item.level_json?.gridSize?.rows || 0,
+                    level_json: item.level_json,
+                    liked_by_me: !!item.liked_by_me,
+                };
+            }
+
+            async function loadCommunityMaps(reset) {
+                if (communityLoading) return;
+                if (!api) {
+                    setCommunityState("error");
+                    return;
+                }
+                communityLoading = true;
+
+                if (reset) {
+                    communityCursor = null;
+                    currentFeedMaps = [];
+                    const cached = getCachedFeed(communityTab);
+                    if (cached && Array.isArray(cached.data) && cached.data.length > 0) {
+                        currentFeedMaps = cached.data.map(normalizeMapItem);
+                        communityCursor = cached.nextCursor || null;
+                        renderCommunityGrid();
+                        setCommunityState("ready");
+                    } else {
+                        setCommunityState("loading");
+                    }
+                }
+
+                try {
+                    const result = await api.getMaps(communityTab, reset ? null : communityCursor, 20);
+                    const incoming = (result.data || []).map(normalizeMapItem);
+                    currentFeedMaps = reset ? incoming : currentFeedMaps.concat(incoming);
+                    communityCursor = result.next_cursor || null;
+                    setCachedFeed(communityTab, currentFeedMaps, communityCursor);
+                    renderCommunityGrid();
+                    setCommunityState(currentFeedMaps.length ? "ready" : "empty");
+                } catch (err) {
+                    if (currentFeedMaps.length) {
+                        setCommunityState("ready");
+                    } else {
+                        setCommunityState("error");
+                    }
+                } finally {
+                    communityLoading = false;
+                }
+            }
+
+            function renderCommunityGrid() {
+                const grid = document.getElementById("community-grid");
+                grid.innerHTML = "";
+                currentFeedMaps.forEach((map) => {
+                    const card = document.createElement("div");
+                    card.className = "map-card";
+                    const titleEl = document.createElement("div");
+                    titleEl.className = "map-card-title";
+                    titleEl.textContent = map.title;
+
+                    const authorEl = document.createElement("div");
+                    authorEl.className = "map-card-author";
+                    authorEl.textContent = `por ${map.author_name}`;
+
+                    const meta1 = document.createElement("div");
+                    meta1.className = "map-card-meta";
+                    meta1.textContent = `${map.piece_count}⬢ · ${map.grid_cols}x${map.grid_rows}`;
+
+                    const meta2 = document.createElement("div");
+                    meta2.className = "map-card-meta";
+                    meta2.textContent = `${map.win_rate}% win`;
+
+                    const actions = document.createElement("div");
+                    actions.className = "map-card-actions";
+
+                    const playBtn = document.createElement("button");
+                    playBtn.className = "btn btn-accent";
+                    playBtn.dataset.action = "play";
+                    playBtn.textContent = "▶ Jogar";
+
+                    const likeBtn = document.createElement("button");
+                    likeBtn.className = "btn";
+                    likeBtn.dataset.action = "like";
+                    likeBtn.textContent = `${map.liked_by_me ? "💔" : "❤️"} ${map.likes_count}`;
+
+                    const shareBtn = document.createElement("button");
+                    shareBtn.className = "btn";
+                    shareBtn.dataset.action = "share";
+                    shareBtn.textContent = "🔗";
+
+                    actions.appendChild(playBtn);
+                    actions.appendChild(likeBtn);
+                    actions.appendChild(shareBtn);
+
+                    card.appendChild(titleEl);
+                    card.appendChild(authorEl);
+                    card.appendChild(meta1);
+                    card.appendChild(meta2);
+                    card.appendChild(actions);
+
+                    card.querySelector('[data-action="play"]').addEventListener("click", async () => {
+                        game.sound.click();
+                        loadCommunityMap(map);
+                        if (api) {
+                            try {
+                                const run = await api.startRun(map.id);
+                                currentCommunityMapMeta = { ...(currentCommunityMapMeta || {}), runId: run.data?.run_id || null };
+                            } catch {
+                                // non-blocking
+                            }
+                        }
+                    });
+
+                    card.querySelector('[data-action="like"]').addEventListener("click", async () => {
+                        game.sound.click();
+                        if (!api) return;
+                        try {
+                            const res = await api.likeMap(map.id);
+                            map.liked_by_me = !!res.data?.liked;
+                            map.likes_count = res.data?.likes_count ?? map.likes_count;
+                            renderCommunityGrid();
+                            showStatus(map.liked_by_me ? "Curtido!" : "Curtida removida", 1200);
+                        } catch {
+                            showStatus("Não foi possível curtir agora.", 1600);
+                        }
+                    });
+
+                    card.querySelector('[data-action="share"]').addEventListener("click", async () => {
+                        game.sound.click();
+                        const shareUrl = `${location.origin}${location.pathname}?map=${encodeURIComponent(map.id || map.slug)}`;
+                        try {
+                            if (navigator.share) await navigator.share({ title: map.title, text: "Jogue este mapa!", url: shareUrl });
+                            else await navigator.clipboard.writeText(shareUrl);
+                            showStatus("Link copiado!", 1400);
+                        } catch {
+                            showStatus("Não foi possível compartilhar.", 1600);
+                        }
+                    });
+
+                    grid.appendChild(card);
+                });
+
+                document.getElementById("community-load-more").style.display = communityCursor ? "inline-block" : "none";
+            }
+
+            function loadCommunityMap(map) {
+                const level = map.level_json;
+                currentCommunityMapMeta = { id: map.id, slug: map.slug, title: map.title, liked_by_me: !!map.liked_by_me, likes_count: map.likes_count || 0 };
+                document.getElementById("community-screen").style.display = "none";
+                loadCustomLevel(level);
+            }
+
+            function openPublishModal(level) {
+                pendingPublishLevel = level;
+                const pieceCount = level.pieceCount || level.pieces?.length || 0;
+                document.getElementById("publish-preview").textContent = `${level.name} · ${pieceCount} peças · ${level.gridSize.cols}x${level.gridSize.rows}`;
+                showOverlay("publish-modal");
+            }
+
+            function validateLevelPayload(level) {
+                const errors = [];
+                if (!level?.gridSize || level.gridSize.cols < 2 || level.gridSize.cols > 12 || level.gridSize.rows < 2 || level.gridSize.rows > 10) {
+                    errors.push("gridSize inválido");
+                }
+                if (!Array.isArray(level?.mask) || level.mask.length !== level.gridSize?.rows) {
+                    errors.push("mask inválida");
+                }
+                if (!Array.isArray(level?.pieces) || level.pieces.length === 0 || level.pieces.length > 50) {
+                    errors.push("pieces inválido (0-50)");
+                }
+                const validColors = ["red", "blue", "green", "orange", "yellow", "purple", "white", "gray", "black"];
+                for (const p of level?.pieces || []) {
+                    if (!Number.isInteger(p.q) || !Number.isInteger(p.r)) errors.push("coordenada inválida");
+                    if (!validColors.includes(p.color)) errors.push("cor inválida");
+                    if (p.modifier && !validColors.includes(p.modifier)) errors.push("modifier inválido");
+                    if (p.q < 0 || p.q >= level.gridSize.cols || p.r < 0 || p.r >= level.gridSize.rows) errors.push("peça fora do grid");
+                }
+                if (level.moveLimit !== null && level.moveLimit !== undefined) {
+                    if (!Number.isInteger(level.moveLimit) || level.moveLimit < 1 || level.moveLimit > 99) errors.push("moveLimit inválido");
+                }
+                if (!Number.isInteger(level.par) || level.par < 1 || level.par > 99) errors.push("par inválido");
+                if (JSON.stringify(level).length > 10240) errors.push("payload excede 10KB");
+                return { valid: errors.length === 0, errors };
+            }
+
+            async function confirmPublish() {
+                if (!api) {
+                    showStatus("Comunidade indisponível no momento.", 2200);
+                    return;
+                }
+                if (!pendingPublishLevel) return;
+                const validation = validateLevelPayload(pendingPublishLevel);
+                if (!validation.valid) {
+                    showStatus(`Mapa inválido: ${validation.errors[0]}`, 2600);
+                    return;
+                }
+                const author = (document.getElementById("publish-author").value || "Anônimo").trim();
+                const title = (pendingPublishLevel.name || "Meu Mapa").trim();
+                try {
+                    showStatus("Seu mapa está sendo publicado...", 1400);
+                    await api.publishMap(pendingPublishLevel, author, title);
+                    closeAllModals();
+                    showStatus("Mapa publicado!", 2000);
+                } catch (err) {
+                    const msg = String(err.message || "");
+                    if (/duplicate|duplicado|exists/i.test(msg)) showStatus("Este mapa já foi publicado antes.", 2200);
+                    else if (/429|limit|rate/i.test(msg)) showStatus("Muitas publicações hoje. Tente novamente amanhã.", 2400);
+                    else showStatus("Erro ao publicar. Tente novamente.", 2200);
+                }
+            }
+
+            async function confirmReport() {
+                if (!api || !pendingReportMapId) return;
+                const reason = document.getElementById("report-reason").value;
+                const detail = document.getElementById("report-detail").value.trim();
+                try {
+                    await api.reportMap(pendingReportMapId, reason, detail);
+                    closeAllModals();
+                    showStatus("Denúncia enviada. Obrigado!", 1800);
+                } catch (err) {
+                    const msg = String(err.message || "");
+                    if (/already|unique|409/i.test(msg)) showStatus("Você já denunciou este mapa.", 1800);
+                    else showStatus("Não foi possível enviar a denúncia.", 1800);
+                }
+            }
+
             // ===================== MODAIS =====================
             function closeAllModals() {
                 document.getElementById("overlay").classList.remove("active");
-                ["win-modal", "lose-modal", "level-select-modal", "help-modal", "game-complete-modal", "pause-modal"].forEach(id => document.getElementById(id).style.display = "none");
+                ["win-modal", "lose-modal", "level-select-modal", "help-modal", "game-complete-modal", "pause-modal", "publish-modal", "report-modal"].forEach(id => document.getElementById(id).style.display = "none");
             }
             function showOverlay(modalId) { closeAllModals(); document.getElementById("overlay").classList.add("active"); document.getElementById(modalId).style.display = "block"; }
 
@@ -417,6 +747,18 @@
                 stopTimer();
                 const level = game.currentLevel;
                 const stars = level.par ? game.save.getStars(level.id, level.par) : 3;
+
+                if (isCustomLevel && currentCommunityMapMeta && api) {
+                    api.completeRun(
+                        currentCommunityMapMeta.id,
+                        currentCommunityMapMeta.runId || null,
+                        game.moves,
+                        levelElapsed,
+                        true
+                    ).catch(() => {
+                        // non-blocking telemetry
+                    });
+                }
 
                 if (!isCustomLevel && !isTutorialLevel) {
                     const isLast = currentLevelIndex >= LEVELS.length - 1;
@@ -447,6 +789,10 @@
 
                 document.getElementById("btn-next-level").style.display = (isCustomLevel && !isTutorialLevel) ? "none" : "inline-block";
                 document.getElementById("btn-back-editor").style.display = (isCustomLevel && !isTutorialLevel) ? "inline-block" : "none";
+                const likeBtn = document.getElementById("btn-like-map");
+                const publishBtn = document.getElementById("btn-publish-win");
+                if (likeBtn) likeBtn.style.display = (isCustomLevel && !!currentCommunityMapMeta) ? "inline-block" : "none";
+                if (publishBtn) publishBtn.style.display = (isCustomLevel && !currentCommunityMapMeta) ? "inline-block" : "none";
                 if (isTutorialLevel) {
                     document.getElementById("btn-next-level").textContent = "Começar!";
                 } else if (!isCustomLevel) {
@@ -606,6 +952,7 @@
 
             // ===================== EDITOR =====================
             function enterEditor() {
+                currentCommunityMapMeta = null;
                 hideWelcome();
                 showEditorUI();
             }
@@ -644,8 +991,24 @@
                 // Welcome
                 document.getElementById("btn-tutorial").addEventListener("click", () => { game.sound._init(); game.sound.click(); hideWelcome(); loadTutorial(); });
                 document.getElementById("btn-start").addEventListener("click", () => { game.sound._init(); game.sound.click(); hideWelcome(); loadLevel(0); });
+                document.getElementById("btn-maps").addEventListener("click", () => { game.sound._init(); game.sound.click(); showCommunityScreen(); });
                 document.getElementById("btn-continue").addEventListener("click", () => { game.sound._init(); game.sound.click(); hideWelcome(); loadLevel(currentLevelIndex); });
                 document.getElementById("btn-editor-welcome").addEventListener("click", () => { game.sound._init(); game.sound.click(); editor.reset(); enterEditor(); });
+
+                // Community
+                document.getElementById("community-back").addEventListener("click", () => { game.sound.click(); showWelcome(); });
+                document.getElementById("community-retry").addEventListener("click", () => { game.sound.click(); loadCommunityMaps(true); });
+                document.getElementById("community-load-more").addEventListener("click", () => { game.sound.click(); loadCommunityMaps(false); });
+                document.querySelectorAll(".community-tab").forEach(btn => {
+                    btn.addEventListener("click", () => {
+                        if (communityLoading) return;
+                        game.sound.click();
+                        document.querySelectorAll(".community-tab").forEach(tabBtn => tabBtn.classList.remove("active"));
+                        btn.classList.add("active");
+                        communityTab = btn.dataset.tab;
+                        loadCommunityMaps(true);
+                    });
+                });
 
                 // Canvas (game + editor)
                 canvas.addEventListener("click", (e) => {
@@ -721,6 +1084,29 @@
                 document.getElementById("btn-replay").addEventListener("click", () => { game.sound.click(); if (isCustomLevel) loadCustomLevel(game.currentLevel); else loadLevel(currentLevelIndex); });
                 document.getElementById("btn-levels-win").addEventListener("click", () => { game.sound.click(); closeAllModals(); showLevelSelect(); });
                 document.getElementById("btn-back-editor").addEventListener("click", () => { game.sound.click(); closeAllModals(); showEditorUI(); });
+                const likeMapBtn = document.getElementById("btn-like-map");
+                if (likeMapBtn) {
+                    likeMapBtn.addEventListener("click", async () => {
+                        game.sound.click();
+                        if (!api || !currentCommunityMapMeta) return;
+                        try {
+                            const res = await api.likeMap(currentCommunityMapMeta.id);
+                            currentCommunityMapMeta.liked_by_me = !!res.data?.liked;
+                            currentCommunityMapMeta.likes_count = res.data?.likes_count ?? currentCommunityMapMeta.likes_count;
+                            showStatus(currentCommunityMapMeta.liked_by_me ? "Curtido!" : "Curtida removida", 1200);
+                        } catch {
+                            showStatus("Não foi possível curtir agora.", 1600);
+                        }
+                    });
+                }
+                const publishWinBtn = document.getElementById("btn-publish-win");
+                if (publishWinBtn) {
+                    publishWinBtn.addEventListener("click", () => {
+                        game.sound.click();
+                        if (!game.currentLevel) return;
+                        openPublishModal(game.currentLevel);
+                    });
+                }
 
                 // Game complete
                 document.getElementById("btn-replay-all").addEventListener("click", () => { game.sound.click(); loadLevel(0); });
@@ -773,6 +1159,19 @@
                 // Editor actions
                 document.getElementById("editor-test").addEventListener("click", () => { game.sound.click(); editorTest(); });
                 document.getElementById("editor-save").addEventListener("click", () => { game.sound.click(); editorSave(); });
+                document.getElementById("editor-publish").addEventListener("click", () => {
+                    game.sound.click();
+                    editor.name = document.getElementById("editor-name").value;
+                    const ml = document.getElementById("editor-move-limit").value;
+                    editor.moveLimit = ml ? parseInt(ml) : null;
+                    const par = document.getElementById("editor-par").value;
+                    editor.par = par ? parseInt(par) : null;
+                    if (editor.getPieceCount() === 0) {
+                        showStatus("Coloque pelo menos 1 peça!", 1800);
+                        return;
+                    }
+                    openPublishModal(editor.toLevel());
+                });
                 document.getElementById("editor-export").addEventListener("click", () => {
                     editor.name = document.getElementById("editor-name").value;
                     const code = editor.exportCode();
@@ -786,6 +1185,12 @@
 
                 // Editor name sync
                 document.getElementById("editor-name").addEventListener("input", (e) => { editor.name = e.target.value; });
+
+                // Publish/report modals
+                document.getElementById("publish-confirm").addEventListener("click", () => { confirmPublish(); });
+                document.getElementById("publish-cancel").addEventListener("click", () => { closeAllModals(); });
+                document.getElementById("report-confirm").addEventListener("click", () => { confirmReport(); });
+                document.getElementById("report-cancel").addEventListener("click", () => { closeAllModals(); });
 
                 // Keyboard
                 document.addEventListener("keydown", (e) => {
