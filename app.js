@@ -25,6 +25,7 @@
             const confettiCanvas = document.getElementById("confetti-canvas");
             const confettiCtx = confettiCanvas.getContext("2d");
             let confettiPieces = [], confettiRunning = false;
+            let confettiStopTimer = null;
 
             // Editor hover
             let editorHoveredCell = null;
@@ -88,6 +89,7 @@
             // ===================== LEVEL LOADING =====================
             function loadLevel(index) {
                 if (index < 0 || index >= LEVELS.length) return;
+                stopConfetti();
                 currentLevelIndex = index;
                 isCustomLevel = false;
                 isTutorialLevel = false;
@@ -122,6 +124,7 @@
 
             function startTutorialPhase(index) {
                 const phase = tutorialPhases[index];
+                stopConfetti();
                 tutorialActionIndex = 0;
                 tutorialPhaseCompleted = !phase.actions || phase.actions.length === 0;
                 game.loadLevel(phase.level);
@@ -134,6 +137,7 @@
             }
 
             function loadCustomLevel(level) {
+                stopConfetti();
                 isCustomLevel = true;
                 isTutorialLevel = false;
                 game.loadLevel(level);
@@ -345,14 +349,36 @@
 
             // ===================== CONFETTI =====================
             function spawnConfetti() {
+                if (confettiStopTimer) {
+                    clearTimeout(confettiStopTimer);
+                    confettiStopTimer = null;
+                }
                 const dpr = window.devicePixelRatio || 1; confettiCanvas.width = window.innerWidth * dpr; confettiCanvas.height = window.innerHeight * dpr; confettiCanvas.style.width = window.innerWidth + "px"; confettiCanvas.style.height = window.innerHeight + "px"; confettiCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
                 confettiPieces = []; const colors = ["#00ff88", "#ff4444", "#4488ff", "#ffdd44", "#ff88ff", "#88ffff"];
                 for (let i = 0; i < 120; i++) { confettiPieces.push({ x: Math.random() * window.innerWidth, y: -20 - Math.random() * 200, vx: (Math.random() - 0.5) * 4, vy: 2 + Math.random() * 4, rot: Math.random() * 360, rotV: (Math.random() - 0.5) * 10, w: 6 + Math.random() * 6, h: 4 + Math.random() * 4, color: colors[Math.floor(Math.random() * colors.length)], life: 1 }); }
-                confettiRunning = true; setTimeout(() => { confettiRunning = false; }, 4000);
+                confettiRunning = true;
+                confettiStopTimer = setTimeout(() => {
+                    stopConfetti();
+                }, 4000);
             }
+
+            function stopConfetti() {
+                if (confettiStopTimer) {
+                    clearTimeout(confettiStopTimer);
+                    confettiStopTimer = null;
+                }
+                confettiRunning = false;
+                confettiPieces = [];
+                confettiCtx.setTransform(1, 0, 0, 1, 0, 0);
+                confettiCtx.clearRect(0, 0, confettiCanvas.width, confettiCanvas.height);
+            }
+
             function drawConfetti() {
                 confettiCtx.clearRect(0, 0, window.innerWidth, window.innerHeight);
                 for (let i = confettiPieces.length - 1; i >= 0; i--) { const c = confettiPieces[i]; c.x += c.vx; c.y += c.vy; c.vy += 0.08; c.rot += c.rotV; c.life -= 0.003; if (c.life <= 0 || c.y > window.innerHeight + 20) { confettiPieces.splice(i, 1); continue; } confettiCtx.save(); confettiCtx.translate(c.x, c.y); confettiCtx.rotate(c.rot * Math.PI / 180); confettiCtx.globalAlpha = Math.min(c.life, 1); confettiCtx.fillStyle = c.color; confettiCtx.fillRect(-c.w / 2, -c.h / 2, c.w, c.h); confettiCtx.restore(); }
+                if (confettiPieces.length === 0) {
+                    stopConfetti();
+                }
             }
 
             // ===================== WELCOME =====================
@@ -362,6 +388,7 @@
                 setTimeout(() => ws.style.display = "none", 600);
             }
             function showWelcome() {
+                stopConfetti();
                 stopTimer();
                 if (tutorialActive) endTutorialWizard(false);
                 closeAllModals();
