@@ -300,7 +300,7 @@ class Game {
             return this._canRemoveByPieceRule(proxyPiece, q, r, false);
         }
 
-        const excludeBlack = ["red", "blue", "yellow", "purple"].includes(piece.color);
+        const excludeBlack = ["red", "blue", "green", "yellow", "purple"].includes(piece.color);
         const ctx = this._getNeighborContext(q, r, piece, { excludeBlack });
 
         switch (piece.color) {
@@ -356,7 +356,7 @@ class Game {
         });
 
         this.board.delete(key);
-        if (piece.color !== "gray" && piece.color !== "black") {
+        if (piece.color !== "black") {
             this.hand.push({ ...piece });
         }
         this.lastRemovedPiece = { color: piece.color, modifier: piece.modifier || null };
