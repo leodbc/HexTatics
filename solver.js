@@ -24,6 +24,7 @@ function solve(levelId) {
 
     // BFS: fila de estados
     const queue = [];
+    let queueHead = 0;
     const initialState = _serializeState(game);
     visited.add(initialState);
     queue.push({ game: _cloneGameState(game), actions: [] });
@@ -31,13 +32,17 @@ function solve(levelId) {
     let iterations = 0;
     const maxIterations = 500000;
 
-    while (queue.length > 0 && iterations < maxIterations) {
+    while (queueHead < queue.length && iterations < maxIterations) {
         iterations++;
-        const current = queue.shift();
+        const current = queue[queueHead++];
         const g = current.game;
 
+        if (levelDef.moveLimit && g.moves > levelDef.moveLimit) {
+            continue;
+        }
+
         // Verifica vitória (board vazio = vitória, independente da mão)
-        if (g.board.size === 0) {
+        if (g.board.size === 0 && (!levelDef.moveLimit || g.moves <= levelDef.moveLimit)) {
             const elapsed = ((performance.now() - startTime) / 1000).toFixed(2);
             console.log(`✅ Solução encontrada em ${current.actions.length} movimentos! (${iterations} estados explorados, ${elapsed}s)`);
             console.log("Ações:", current.actions);
@@ -49,10 +54,10 @@ function solve(levelId) {
             const piece = g.board.get(`${cell.q},${cell.r}`);
             if (!piece) continue;
 
-            const tempGame = _restoreGameState(g, levelDef);
-            if (tempGame.canRemove(cell.q, cell.r)) {
-                const newGame = _restoreGameState(g, levelDef);
+            const newGame = _restoreGameState(g, levelDef);
+            if (newGame.canRemove(cell.q, cell.r)) {
                 newGame.removePiece(cell.q, cell.r);
+                if (newGame.moveLimitExceeded) continue;
                 const state = _serializeState(newGame);
                 if (!visited.has(state)) {
                     visited.add(state);
@@ -77,6 +82,7 @@ function solve(levelId) {
 
                 const newGame = _restoreGameState(g, levelDef);
                 if (newGame.placePiece(ec.q, ec.r, hi)) {
+                    if (newGame.moveLimitExceeded) continue;
                     const state = _serializeState(newGame);
                     if (!visited.has(state)) {
                         visited.add(state);
@@ -103,7 +109,10 @@ function _serializeState(game) {
     }
     boardEntries.sort();
     const handStr = game.hand.map(p => `${p.color}${p.modifier ? '+' + p.modifier : ''}`).sort().join(';');
-    return boardEntries.join('|') + '##' + handStr;
+    const lastRemoved = game.lastRemovedPiece
+        ? `${game.lastRemovedPiece.color}${game.lastRemovedPiece.modifier ? '+' + game.lastRemovedPiece.modifier : ''}`
+        : "none";
+    return boardEntries.join('|') + '##' + handStr + '##' + lastRemoved;
 }
 
 // Clona o estado relevante do jogo (sem referências compartilhadas)
@@ -116,6 +125,7 @@ function _cloneGameState(game) {
         board,
         hand: game.hand.map(p => ({ ...p })),
         moves: game.moves,
+        lastRemovedPiece: game.lastRemovedPiece ? { ...game.lastRemovedPiece } : null,
     };
 }
 
@@ -127,6 +137,7 @@ function _restoreGameState(state, levelDef) {
     game.moveLimit = levelDef.moveLimit;
     game.moves = state.moves;
     game.hand = state.hand.map(p => ({ ...p }));
+    game.lastRemovedPiece = state.lastRemovedPiece ? { ...state.lastRemovedPiece } : null;
     game.board = new Map();
     for (const [key, piece] of state.board) {
         game.board.set(key, { ...piece });

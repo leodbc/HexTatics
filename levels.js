@@ -1,6 +1,6 @@
-// levels.js — 12 fases do HexTatics com dificuldade progressiva
+// levels.js — 20 fases do HexTatics com dificuldade progressiva
 // Sistema: odd-q offset, flat-top hex
-// TODAS as regras exercitadas: Red, Blue, Green, Yellow, Gray, Modifiers, Hand/Placement, Move Limit, Board Holes
+// TODAS as regras exercitadas: Red, Blue, Green, Orange, Yellow, Purple, White, Gray, Black, Modifiers, Hand/Placement, Move Limit, Board Holes
 // Cada fase verificada manualmente para ser solucionável.
 
 const LEVELS = [
@@ -53,7 +53,7 @@ const LEVELS = [
     // Sol: G(0,0)→R(0,1)→R(1,0)→B(1,1)→B(2,0) = 5 mov
     {
         id: 3, name: "Muralha Verde", category: "Fundamentos",
-        description: "VERDES ■ só saem se TODAS as vizinhas estiverem preenchidas!",
+        description: "VERDES ■ saem com 2+ vizinhas conectadas entre si.",
         gridSize: { cols: 5, rows: 5 }, moveLimit: null, par: 5,
         mask: [
             [true, true, true, true, true],
@@ -102,22 +102,17 @@ const LEVELS = [
     // G(0,0): adj (1,0)R,(0,1)R → 2/2 ALL → ok. Sol: G→R(0,1)→R(1,0)→B(2,0)→Gr(4,2)→Gr(5,2) = 6 mov
     {
         id: 5, name: "Paredes Cinzas", category: "Estratégia",
-        description: "CINZAS ▬ são invisíveis para as regras e só saem quando sobrar apenas elas!",
-        gridSize: { cols: 7, rows: 5 }, moveLimit: null, par: 6,
+        description: "CINZAS ▬ copiam regra e modificador da última peça removida.",
+        gridSize: { cols: 5, rows: 2 }, moveLimit: null, par: 4,
         mask: [
-            [true, true, true, true, true, true, true],
-            [true, true, true, true, true, true, true],
-            [true, true, true, true, true, true, true],
-            [true, true, true, true, true, true, true],
-            [true, true, true, true, true, true, true],
+            [true, false, true, true, true],
+            [true, false, true, false, true],
         ],
         pieces: [
-            { q: 0, r: 0, color: "green" },
-            { q: 1, r: 0, color: "red" },
-            { q: 0, r: 1, color: "red" },
-            { q: 2, r: 0, color: "blue" },
-            { q: 4, r: 2, color: "gray" },
-            { q: 5, r: 2, color: "gray" },
+            { q: 0, r: 0, color: "blue" },
+            { q: 2, r: 0, color: "gray" },
+            { q: 4, r: 0, color: "red" },
+            { q: 4, r: 1, color: "blue" },
         ]
     },
 
@@ -150,29 +145,22 @@ const LEVELS = [
     // Sol: G(3,3)→R(3,2)→R(2,3)→R(4,3)→R(4,4)→R(3,4)→R(2,4)→B(5,3)→B(1,3)→Gr(3,1)→Gr(3,5) = 11 mov
     {
         id: 7, name: "Fortaleza", category: "Estratégia",
-        description: "O centro verde tem TODAS vizinhas preenchidas. Desmonte a fortaleza de dentro para fora!",
-        gridSize: { cols: 7, rows: 7 }, moveLimit: null, par: 11,
+        description: "Fortaleza compacta: ordem certa entre verde, mão e cinza dinâmica.",
+        gridSize: { cols: 5, rows: 4 }, moveLimit: null, par: 9,
         mask: [
-            [false, true, true, true, true, true, false],
-            [true, true, true, true, true, true, true],
-            [true, true, true, true, true, true, true],
-            [true, true, true, true, true, true, true],
-            [true, true, true, true, true, true, true],
-            [true, true, true, true, true, true, true],
-            [false, true, true, true, true, true, false],
+            [true, true, true, true, true],
+            [true, true, true, true, true],
+            [true, true, true, true, true],
+            [true, true, true, true, true],
         ],
         pieces: [
-            { q: 3, r: 3, color: "green" },
-            { q: 4, r: 3, color: "red" },
-            { q: 4, r: 4, color: "red" },
-            { q: 3, r: 4, color: "red" },
-            { q: 2, r: 4, color: "red" },
-            { q: 2, r: 3, color: "red" },
-            { q: 3, r: 2, color: "red" },
-            { q: 5, r: 3, color: "blue" },
-            { q: 1, r: 3, color: "blue" },
-            { q: 3, r: 1, color: "gray" },
-            { q: 3, r: 5, color: "gray" },
+            { q: 0, r: 0, color: "green" },
+            { q: 1, r: 0, color: "red" },
+            { q: 1, r: 1, color: "blue" },
+            { q: 2, r: 1, color: "red" },
+            { q: 3, r: 1, color: "red" },
+            { q: 4, r: 1, color: "blue" },
+            { q: 4, r: 3, color: "gray" },
         ]
     },
 
@@ -239,7 +227,7 @@ const LEVELS = [
     {
         id: 10, name: "Arquipélago", category: "Domínio",
         description: "🕳️ Buracos mudam vizinhanças! A azul com modificador só conta vizinhas vermelhas.",
-        gridSize: { cols: 6, rows: 5 }, moveLimit: null, par: 6,
+        gridSize: { cols: 6, rows: 5 }, moveLimit: null, par: 8,
         mask: [
             [false, true, true, true, true, false],
             [false, false, true, true, true, true],
@@ -262,24 +250,23 @@ const LEVELS = [
     // Sol: Y(3,2)→R(4,3)→R(4,2)→R(3,1)→B(2,1)→B(5,3)→Gr(1,2) = 7 mov, limit=10
     {
         id: 11, name: "Equilíbrio", category: "Domínio",
-        description: "Amarela, Cinza e limite de movimentos. Cada passo conta!",
-        gridSize: { cols: 7, rows: 6 }, moveLimit: 10, par: 7,
+        description: "Modificadores com limite: resolva sem desperdiçar movimentos.",
+        gridSize: { cols: 7, rows: 5 }, moveLimit: 10, par: 7,
         mask: [
-            [true, true, true, true, true, true, true],
-            [true, true, true, true, true, true, true],
-            [true, true, true, true, true, true, true],
-            [true, true, true, true, true, true, true],
-            [true, true, true, true, true, true, true],
-            [true, true, true, true, true, true, true],
+            [true, true, false, false, true, false, false],
+            [true, false, false, false, true, false, false],
+            [true, false, false, false, true, false, false],
+            [false, false, false, false, false, false, false],
+            [false, false, false, false, false, false, false],
         ],
         pieces: [
-            { q: 3, r: 2, color: "yellow" },
-            { q: 3, r: 1, color: "red" },
-            { q: 4, r: 2, color: "red" },
-            { q: 4, r: 3, color: "red" },
-            { q: 2, r: 1, color: "blue" },
-            { q: 5, r: 3, color: "blue" },
-            { q: 1, r: 2, color: "gray" },
+            { q: 0, r: 0, color: "orange", modifier: "red" },
+            { q: 1, r: 0, color: "red" },
+            { q: 0, r: 1, color: "red" },
+            { q: 0, r: 2, color: "blue" },
+            { q: 4, r: 1, color: "purple", modifier: "blue" },
+            { q: 4, r: 0, color: "blue" },
+            { q: 4, r: 2, color: "blue" },
         ]
     },
 
@@ -291,72 +278,44 @@ const LEVELS = [
     // Sol: Y(3,5)→R(4,5)→R(2,5)→G(3,3)→R(3,2)→R(2,3)→R(4,3)→R(4,4)→R(3,4)→R(2,4)→B(5,3)→B(1,3)→Gr(3,1)→Gr(3,6) = 14 mov
     {
         id: 12, name: "Mestre Hex", category: "Domínio",
-        description: "🏆 O desafio definitivo! Verde, Amarela, Cinza e Modificadores.",
-        gridSize: { cols: 7, rows: 7 }, moveLimit: null, par: 14,
+        description: "🏆 Síntese avançada: branca, laranja, cinza dinâmica e preta.",
+        gridSize: { cols: 7, rows: 3 }, moveLimit: null, par: 8,
         mask: [
-            [false, true, true, true, true, true, false],
-            [true, true, true, true, true, true, true],
-            [true, true, true, true, true, true, true],
-            [true, true, true, true, true, true, true],
-            [true, true, true, true, true, true, true],
-            [true, true, true, true, true, true, true],
-            [false, true, true, true, true, true, false],
+            [true, false, true, true, false, false, true],
+            [false, false, true, false, false, false, true],
+            [true, false, false, false, false, false, true],
         ],
         pieces: [
-            // Green center ring
-            { q: 3, r: 3, color: "green" },
-            { q: 4, r: 3, color: "red" },
-            { q: 4, r: 4, color: "red" },
-            { q: 3, r: 4, color: "red" },
-            { q: 2, r: 4, color: "red" },
-            { q: 2, r: 3, color: "red" },
-            { q: 3, r: 2, color: "red" },
-            // Outer blues
-            { q: 5, r: 3, color: "blue" },
-            { q: 1, r: 3, color: "blue" },
-            // Yellow cluster (NE=4,5 + N=3,4 + NW=2,5)
-            { q: 3, r: 5, color: "yellow" },
-            { q: 4, r: 5, color: "red" },
-            { q: 2, r: 5, color: "red" },
-            // Grays
-            { q: 3, r: 1, color: "gray" },
-            { q: 3, r: 6, color: "gray" },
+            { q: 0, r: 0, color: "white" },
+            { q: 6, r: 0, color: "white" },
+            { q: 2, r: 0, color: "orange" },
+            { q: 3, r: 0, color: "red" },
+            { q: 2, r: 1, color: "blue" },
+            { q: 0, r: 2, color: "blue" },
+            { q: 6, r: 2, color: "gray" },
+            { q: 6, r: 1, color: "black" },
         ]
     },
     // ===== MUNDO 4: TODOS OS PRISMAS =====
 
-    // Fase 13 — Prisma: Introduz a peça Roxa
-    // Sol: G(0,0)→R(1,0)→B(0,1)→P(3,2)→R(3,1)→B(3,3)→Y(5,2)→R(6,3)→R(6,2)→R(5,1)→B(4,1)→Gr(6,4) = 12 mov
+    // Fase 13 — Prisma: foco em roxa + cinza dinâmica com mão curta
+    // Solução validada (BFS): 6 movimentos com 1 recolocação
     {
         id: 13, name: "Prisma", category: "Todos os Prismas",
-        description: "💎 Todas as 6 cores juntas! A Roxa precisa de 2 vizinhas opostas.",
-        gridSize: { cols: 7, rows: 5 },
-        moveLimit: null, par: 12,
+        description: "💎 Roxa em oposição exata, seguida por limpeza com cinza dinâmica.",
+        gridSize: { cols: 5, rows: 4 },
+        moveLimit: 6, par: 4,
         mask: [
-            [true, true, true, true, true, true, true],
-            [true, true, true, true, true, true, true],
-            [true, true, true, true, true, true, true],
-            [true, true, true, true, true, true, true],
-            [true, true, true, true, true, true, true],
+            [true, true, true, true, true],
+            [true, true, true, true, true],
+            [true, true, true, true, true],
+            [true, true, true, true, true],
         ],
         pieces: [
-            // Cluster A — canto esquerdo
-            { q: 0, r: 0, color: "green" },
-            { q: 1, r: 0, color: "red" },
-            { q: 0, r: 1, color: "blue" },
-            // Cluster B — centro (Purple: N↔S)
-            { q: 3, r: 2, color: "purple" },
-            { q: 3, r: 1, color: "red" },
-            { q: 3, r: 3, color: "blue" },
-            // Cluster C — direita (Yellow: NE,N,SE)
-            { q: 5, r: 2, color: "yellow" },
-            { q: 6, r: 2, color: "red" },
-            { q: 5, r: 1, color: "red" },
-            { q: 6, r: 3, color: "red" },
-            // Suporte
-            { q: 4, r: 1, color: "blue" },
-            // Endgame
-            { q: 6, r: 4, color: "gray" },
+            { q: 2, r: 2, color: "purple" },
+            { q: 1, r: 1, color: "blue" },
+            { q: 3, r: 0, color: "blue" },
+            { q: 4, r: 3, color: "gray" },
         ]
     },
 
@@ -364,38 +323,153 @@ const LEVELS = [
     // Sol: G(0,1)→R(1,0)→R(1,1)→B(0,2)→P(3,3)→R(4,3)→R(2,4)→B(1,4)→B(4,2)→Y(5,4)→R(5,3)→R(6,4)→B(6,5)→Gr(1,6)→Gr(5,6) = 15 mov
     {
         id: 14, name: "Espectro", category: "Todos os Prismas",
-        description: "🌈 O espectro completo. Buracos e todas as 6 cores — o desafio final.",
-        gridSize: { cols: 7, rows: 7 },
-        moveLimit: null, par: 15,
+        description: "🌈 Final híbrido com limite: branca, laranja, cinza e preta em ordem precisa.",
+        gridSize: { cols: 7, rows: 3 },
+        moveLimit: 10, par: 9,
         mask: [
-            [false, true, true, true, true, true, false],
-            [true, true, true, true, true, true, true],
-            [true, true, true, true, true, true, true],
-            [true, true, true, true, true, true, true],
-            [true, true, true, true, true, true, true],
-            [true, true, true, true, true, true, true],
-            [false, true, true, true, true, true, false],
+            [true, false, true, true, false, false, true],
+            [false, false, true, false, false, false, true],
+            [true, false, false, false, false, false, true],
         ],
         pieces: [
-            // Cluster A — canto superior esquerdo
-            { q: 0, r: 1, color: "green" },
-            { q: 1, r: 0, color: "red" },
-            { q: 1, r: 1, color: "red" },
+            { q: 0, r: 0, color: "white" },
+            { q: 6, r: 0, color: "white" },
+            { q: 2, r: 0, color: "orange" },
+            { q: 3, r: 0, color: "red" },
+            { q: 2, r: 1, color: "blue" },
             { q: 0, r: 2, color: "blue" },
-            // Cluster B — centro (Purple: NE↔SW)
-            { q: 3, r: 3, color: "purple" },
-            { q: 4, r: 3, color: "red" },
-            { q: 2, r: 4, color: "red" },
-            { q: 1, r: 4, color: "blue" },
+            { q: 6, r: 2, color: "gray", modifier: "blue" },
+            { q: 6, r: 1, color: "black" },
+        ]
+    },
+
+    // ===== MUNDO 5: NOVAS REGRAS =====
+
+    // Fase 15 — Introdução da Laranja
+    {
+        id: 15, name: "Forja Laranja", category: "Novas Regras",
+        description: "⬟ Laranja remove quando todas as casas adjacentes estão preenchidas.",
+        gridSize: { cols: 3, rows: 2 }, moveLimit: null, par: 5,
+        mask: [
+            [true, true, true],
+            [true, true, true],
+        ],
+        pieces: [
+            { q: 0, r: 0, color: "orange" },
+            { q: 1, r: 0, color: "red" },
+            { q: 0, r: 1, color: "blue" },
+            { q: 2, r: 0, color: "red" },
+            { q: 2, r: 1, color: "blue" },
+        ]
+    },
+
+    // Fase 16 — Introdução da Branca
+    {
+        id: 16, name: "Mão Limpa", category: "Novas Regras",
+        description: "◉ Branca só sai quando sua mão não tem peças de outras cores.",
+        gridSize: { cols: 7, rows: 5 }, moveLimit: null, par: 5,
+        mask: [
+            [true, true, true, true, true, true, true],
+            [true, true, true, true, true, true, true],
+            [true, true, true, true, true, true, true],
+            [true, true, true, true, true, true, true],
+            [true, true, true, true, true, true, true],
+        ],
+        pieces: [
+            { q: 0, r: 0, color: "white" },
+            { q: 6, r: 4, color: "white" },
+            { q: 2, r: 2, color: "red" },
+            { q: 3, r: 2, color: "blue" },
+            { q: 4, r: 2, color: "red" },
+        ]
+    },
+
+    // Fase 17 — Introdução da Preta
+    {
+        id: 17, name: "Muros Obsidianos", category: "Novas Regras",
+        description: "⬢ Pretas são paredes: só removem quando restarem apenas pretas.",
+        gridSize: { cols: 6, rows: 5 }, moveLimit: null, par: 5,
+        mask: [
+            [true, true, true, true, true, true],
+            [true, true, true, true, true, true],
+            [true, true, true, true, true, true],
+            [true, true, true, true, true, true],
+            [true, true, true, true, true, true],
+        ],
+        pieces: [
+            { q: 2, r: 2, color: "red" },
+            { q: 3, r: 2, color: "blue" },
+            { q: 1, r: 2, color: "black" },
+            { q: 2, r: 3, color: "black" },
+            { q: 3, r: 3, color: "black" },
+        ]
+    },
+
+    // Fase 18 — Cinza dinâmica
+    {
+        id: 18, name: "Eco Cinzento", category: "Novas Regras",
+        description: "▬ Cinzas copiam a última remoção. Planeje a ordem!",
+        gridSize: { cols: 5, rows: 5 }, moveLimit: null, par: 5,
+        mask: [
+            [true, true, true, true, true],
+            [true, true, true, true, true],
+            [true, true, true, true, true],
+            [true, true, true, true, true],
+            [true, true, true, true, true],
+        ],
+        pieces: [
+            { q: 2, r: 1, color: "red" },
+            { q: 1, r: 1, color: "blue" },
+            { q: 3, r: 1, color: "blue" },
+            { q: 0, r: 4, color: "gray" },
+            { q: 4, r: 4, color: "gray" },
+        ]
+    },
+
+    // Fase 19 — Modificadores avançados
+    {
+        id: 19, name: "Filtro Absoluto", category: "Novas Regras",
+        description: "🔄 Modificadores em peças novas: cada cor conta de forma seletiva.",
+        gridSize: { cols: 7, rows: 5 }, moveLimit: null, par: 7,
+        mask: [
+            [true, true, false, false, true, false, false],
+            [true, false, false, false, true, false, false],
+            [true, false, false, false, true, false, false],
+            [false, false, false, false, false, false, false],
+            [false, false, false, false, false, false, false],
+        ],
+        pieces: [
+            { q: 0, r: 0, color: "orange", modifier: "red" },
+            { q: 1, r: 0, color: "red" },
+            { q: 0, r: 1, color: "red" },
+            { q: 0, r: 2, color: "blue" },
+            { q: 4, r: 1, color: "purple", modifier: "blue" },
+            { q: 4, r: 0, color: "blue" },
             { q: 4, r: 2, color: "blue" },
-            // Cluster C — direita (Yellow: NE,SE,N)
-            { q: 5, r: 4, color: "yellow" },
-            { q: 6, r: 4, color: "red" },
-            { q: 5, r: 3, color: "red" },
-            { q: 6, r: 5, color: "blue" },
-            // Endgame — grays
-            { q: 1, r: 6, color: "gray" },
-            { q: 5, r: 6, color: "gray" },
+        ]
+    },
+
+    // Fase 20 — Convergência
+    {
+        id: 20, name: "Convergência", category: "Novas Regras",
+        description: "⚡ Todas as novas regras juntas: Laranja, Branca, Cinza e Preta.",
+        gridSize: { cols: 7, rows: 3 }, moveLimit: 14, par: 8,
+        mask: [
+            [true, false, true, true, false, false, true],
+            [false, false, true, false, false, false, true],
+            [true, false, false, false, false, false, true],
+        ],
+        pieces: [
+            { q: 0, r: 0, color: "white" },
+            { q: 6, r: 0, color: "white" },
+
+            { q: 2, r: 0, color: "orange" },
+            { q: 3, r: 0, color: "red" },
+            { q: 2, r: 1, color: "blue" },
+
+            { q: 0, r: 2, color: "blue" },
+            { q: 6, r: 2, color: "gray" },
+            { q: 6, r: 1, color: "black" },
         ]
     },
 ];

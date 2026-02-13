@@ -358,15 +358,24 @@ body {
 
 /* ===================== MÃO DO JOGADOR ===================== */
 #hand-area {
-    background: var(--bg-panel);
-    padding: 8px 16px;
+    background: rgba(22, 33, 62, 0.95);
+    padding: 8px 12px;
     display: flex;
     align-items: center;
-    gap: 10px;
-    border-top: 1px solid var(--border);
-    min-height: 60px;
-    flex-shrink: 0;
+    justify-content: center;
+    gap: 8px;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    min-height: 56px;
     overflow-x: auto;
+    position: fixed;
+    left: 50%;
+    bottom: calc(10px + env(safe-area-inset-bottom));
+    transform: translateX(-50%);
+    width: min(94vw, 640px);
+    z-index: 30;
+    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.35);
+    backdrop-filter: blur(6px);
 }
 
 #hand-label {
@@ -855,13 +864,17 @@ body {
     pointer-events: none;
 }
 
-#tutorial-bubble {
+#tutorial-wizard {
     position: absolute;
+    top: 14px;
+    left: 50%;
+    transform: translateX(-50%);
     background: rgba(22, 33, 62, 0.97);
     border: 2px solid var(--accent);
     border-radius: 12px;
-    padding: 14px 18px;
-    max-width: 280px;
+    padding: 14px 16px;
+    max-width: 460px;
+    width: min(92vw, 460px);
     font-size: 0.85em;
     line-height: 1.5;
     color: var(--text);
@@ -883,30 +896,82 @@ body {
     }
 }
 
-#tutorial-bubble .tutorial-arrow {
-    position: absolute;
-    width: 0;
-    height: 0;
-    border: 8px solid transparent;
+.tutorial-wizard-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+    gap: 10px;
 }
 
-#tutorial-bubble .tutorial-arrow.arrow-down {
-    bottom: -16px;
-    left: 50%;
-    transform: translateX(-50%);
-    border-top-color: var(--accent);
+#tutorial-step-badge {
+    font-size: 0.72em;
+    letter-spacing: 0.4px;
+    font-weight: 700;
+    color: var(--accent);
+    text-transform: uppercase;
 }
 
-#tutorial-bubble .tutorial-arrow.arrow-up {
-    top: -16px;
-    left: 50%;
-    transform: translateX(-50%);
-    border-bottom-color: var(--accent);
+#tutorial-step-progress {
+    font-size: 0.75em;
+    color: var(--text-dim);
+    font-variant-numeric: tabular-nums;
 }
 
-#tutorial-bubble .btn {
-    margin-top: 10px;
-    width: 100%;
+#tutorial-step-title {
+    font-size: 1.05em;
+    margin-bottom: 6px;
+    color: #fff;
+}
+
+#tutorial-step-text {
+    margin-bottom: 8px;
+    color: var(--text);
+}
+
+.tutorial-step-rule {
+    font-size: 0.8em;
+    color: #cde7ff;
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 6px 8px;
+    margin-bottom: 8px;
+}
+
+.tutorial-step-objective {
+    font-size: 0.8em;
+    color: var(--accent);
+    margin-bottom: 10px;
+}
+
+.tutorial-wizard-actions {
+    display: flex;
+    gap: 6px;
+    justify-content: flex-end;
+}
+
+.tutorial-wizard-actions .btn {
+    padding: 6px 10px;
+}
+
+.tutorial-wizard-actions .btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+@media (max-width: 768px) {
+    #tutorial-wizard {
+        top: 8px;
+        width: min(96vw, 460px);
+        padding: 10px 12px;
+        font-size: 0.8em;
+    }
+
+    .tutorial-wizard-actions {
+        flex-wrap: wrap;
+        justify-content: center;
+    }
 }
 
 /* ===================== CONFETTI CANVAS ===================== */
@@ -920,7 +985,7 @@ body {
 /* ===================== STATUS MESSAGE ===================== */
 #status-message {
     position: absolute;
-    bottom: 12px;
+    bottom: 84px;
     left: 50%;
     transform: translateX(-50%);
     background: rgba(22, 33, 62, 0.95);
@@ -1411,5 +1476,294 @@ body {
 
     .editor-num-input {
         width: 40px;
+    }
+}
+
+/* ===================== MOBILE-FIRST OVERRIDES ===================== */
+/* Base: celular */
+#welcome-screen {
+    padding: 20px 16px;
+}
+
+#welcome-screen .btn-play,
+#welcome-screen .btn-continue,
+#welcome-screen .btn-tutorial,
+.btn-editor-welcome {
+    width: min(100%, 340px);
+    margin: 6px 0;
+}
+
+#hud,
+#editor-hud {
+    padding: 8px 10px;
+    min-height: 44px;
+    gap: 6px;
+}
+
+.hud-left,
+.hud-center,
+.hud-right {
+    width: 100%;
+}
+
+.hud-left,
+.hud-right {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.hud-center {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 6px;
+}
+
+#level-name {
+    font-size: 0.9em;
+    max-width: 100%;
+}
+
+#move-counter {
+    font-size: 0.82em;
+    padding: 4px 9px;
+}
+
+.timer-badge {
+    font-size: 0.72em;
+    padding: 3px 7px;
+}
+
+.btn {
+    min-height: 40px;
+    padding: 7px 12px;
+    font-size: 0.86em;
+}
+
+.btn-icon {
+    min-width: 40px;
+    padding: 7px 9px;
+}
+
+#hand-area {
+    padding: 8px 10px;
+    min-height: 56px;
+    width: min(96vw, 560px);
+    gap: 6px;
+}
+
+.hand-piece {
+    width: 38px;
+    height: 38px;
+}
+
+.modal {
+    width: min(94vw, 560px);
+    max-height: min(88dvh, 760px);
+    overflow-y: auto;
+    padding: 18px 14px;
+}
+
+.win-stats {
+    gap: 10px;
+    padding: 10px;
+}
+
+.win-stat-value {
+    font-size: 1.05em;
+}
+
+.level-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+}
+
+.level-card {
+    padding: 10px 8px;
+}
+
+#tutorial-wizard {
+    top: 8px;
+    width: min(96vw, 460px);
+    padding: 10px 12px;
+    font-size: 0.82em;
+}
+
+.tutorial-wizard-actions {
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+#editor-toolbar {
+    padding: 8px;
+    gap: 8px;
+}
+
+.editor-tool {
+    width: 34px;
+    height: 34px;
+    font-size: 1em;
+}
+
+.tool-swatch {
+    width: 18px;
+    height: 18px;
+}
+
+.editor-name-input {
+    width: 110px;
+    font-size: 0.82em;
+}
+
+.editor-actions {
+    flex-direction: column;
+    align-items: stretch;
+}
+
+.editor-settings,
+.editor-buttons {
+    width: 100%;
+}
+
+.editor-buttons {
+    justify-content: space-between;
+    flex-wrap: wrap;
+}
+
+/* Desktop e tablets maiores */
+@media (min-width: 769px) {
+    #welcome-screen {
+        padding: 0;
+    }
+
+    #welcome-screen .btn-play,
+    #welcome-screen .btn-continue,
+    #welcome-screen .btn-tutorial,
+    .btn-editor-welcome {
+        width: auto;
+        margin: 6px;
+    }
+
+    #hud,
+    #editor-hud {
+        padding: 8px 16px;
+        min-height: 50px;
+        gap: 8px;
+        justify-content: center;
+        flex-wrap: nowrap;
+    }
+
+    .hud-left,
+    .hud-center,
+    .hud-right {
+        width: auto;
+        flex: 0 0 auto;
+    }
+
+    .hud-left,
+    .hud-center,
+    .hud-right {
+        justify-content: initial;
+    }
+
+    #hud .hud-left,
+    #hud .hud-center,
+    #hud .hud-right,
+    #editor-hud .hud-left,
+    #editor-hud .hud-center,
+    #editor-hud .hud-right {
+        gap: 8px;
+        align-items: center;
+    }
+
+    #hud .hud-center,
+    #editor-hud .hud-center {
+        padding: 0 6px;
+    }
+
+    .btn {
+        min-height: 0;
+        padding: 6px 14px;
+        font-size: 0.85em;
+    }
+
+    .btn-icon {
+        min-width: 36px;
+        padding: 6px 10px;
+    }
+
+    #hand-area {
+        padding: 10px 16px;
+        min-height: 60px;
+        width: min(84vw, 700px);
+        border-radius: 16px;
+    }
+
+    .hand-piece {
+        width: 44px;
+        height: 44px;
+    }
+
+    .modal {
+        width: min(92vw, 760px);
+        padding: 24px;
+    }
+
+    .level-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 10px;
+    }
+
+    .level-card {
+        padding: 12px 8px;
+    }
+
+    #tutorial-wizard {
+        top: 14px;
+        width: min(92vw, 460px);
+        padding: 14px 16px;
+        font-size: 0.85em;
+    }
+
+    .tutorial-wizard-actions {
+        flex-wrap: nowrap;
+        justify-content: flex-end;
+    }
+
+    .editor-name-input {
+        width: 140px;
+        font-size: 0.9em;
+    }
+
+    #editor-toolbar {
+        padding: 8px 12px;
+    }
+
+    .editor-tool {
+        width: 38px;
+        height: 38px;
+        font-size: 1.1em;
+    }
+
+    .tool-swatch {
+        width: 22px;
+        height: 22px;
+    }
+
+    .editor-actions {
+        flex-direction: row;
+        align-items: center;
+        justify-content: center;
+        gap: 16px;
+    }
+
+    .editor-settings,
+    .editor-buttons {
+        width: auto;
+    }
+
+    .editor-tools {
+        justify-content: center;
     }
 }

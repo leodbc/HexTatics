@@ -15,6 +15,7 @@ class Renderer {
         // Estado de interação
         this.hoveredCell = null;
         this.placementMode = false;
+        this.tutorialTarget = null;
         this.animations = new Map();
         this.particles = [];
 
@@ -119,15 +120,6 @@ class Renderer {
 
         this._updateParticles();
 
-        // Cache removable cells for visual hints
-        this._removableSet = new Set();
-        if (!game.won) {
-            for (const [key] of game.board) {
-                const [q, r] = key.split(",").map(Number);
-                if (game.canRemove(q, r)) this._removableSet.add(key);
-            }
-        }
-
         // Draw cells
         for (let r = 0; r < game.gridSize.rows; r++) {
             for (let q = 0; q < game.gridSize.cols; q++) {
@@ -146,6 +138,7 @@ class Renderer {
         const size = this.hexSize;
         const piece = this.game.getPiece(q, r);
         const isHovered = this.hoveredCell && this.hoveredCell.q === q && this.hoveredCell.r === r;
+        const isTutorialTarget = this.tutorialTarget && this.tutorialTarget.q === q && this.tutorialTarget.r === r;
         const anim = this.animations.get(`${q},${r}`);
 
         // Animation alpha
@@ -171,10 +164,10 @@ class Renderer {
             // Piece colors
             const colors = {
                 red: "#CC2222", blue: "#2244BB", green: "#1D8C1D",
-                yellow: "#CCAA00", purple: "#9933CC", gray: "#555555",
+                orange: "#E67E22", yellow: "#CCAA00", purple: "#9933CC",
+                white: "#EDEDED", gray: "#777777", black: "#111111",
             };
-            const key = `${q},${r}`;
-            const isRemovable = this._removableSet && this._removableSet.has(key);
+            const isRemovable = isHovered && !this.game.won ? this.game.canRemove(q, r) : false;
 
             ctx.fillStyle = colors[piece.color] || "#555";
             ctx.fill();
@@ -190,12 +183,17 @@ class Renderer {
                 this._drawHexPath(x, y, size);
                 ctx.stroke();
                 ctx.restore();
-            } else if (isRemovable && !this.game.won) {
-                // Removable hint: subtle pulsing green border
-                const pulse = 0.35 + 0.2 * Math.sin(Date.now() / 600);
-                ctx.strokeStyle = `rgba(0, 255, 136, ${pulse})`;
-                ctx.lineWidth = 2;
+            } else if (isTutorialTarget && !this.game.won) {
+                const pulse = 0.45 + 0.25 * Math.sin(Date.now() / 400);
+                ctx.strokeStyle = `rgba(255, 215, 0, ${pulse})`;
+                ctx.lineWidth = 3;
                 ctx.stroke();
+                ctx.save();
+                ctx.shadowColor = "rgba(255, 215, 0, 0.9)";
+                ctx.shadowBlur = 18;
+                this._drawHexPath(x, y, size);
+                ctx.stroke();
+                ctx.restore();
             } else {
                 ctx.strokeStyle = "rgba(255,255,255,0.12)";
                 ctx.lineWidth = 1;
@@ -203,18 +201,67 @@ class Renderer {
             }
 
             // Piece symbol
-            ctx.fillStyle = "rgba(255,255,255,0.85)";
+            ctx.fillStyle = piece.color === "white" ? "rgba(20,20,20,0.9)" : "rgba(255,255,255,0.85)";
             ctx.font = `bold ${Math.max(size * 0.45, 10)}px 'Segoe UI', system-ui, sans-serif`;
             ctx.textAlign = "center";
             ctx.textBaseline = "middle";
-            const symbols = { red: "♦", blue: "●", green: "■", yellow: "▲", purple: "✦", gray: "▬" };
+            const symbols = {
+                red: "♦", blue: "●", green: "■", orange: "⬟", yellow: "▲",
+                purple: "✦", white: "◉", gray: "▬", black: "⬢"
+            };
             ctx.fillText(symbols[piece.color] || "?", x, y);
+
+            if (piece.color === "gray") {
+                const copied = this.game.lastRemovedPiece;
+                if (copied && copied.color && copied.color !== "gray") {
+                    const badgeColors = {
+                        red: "#CC2222", blue: "#2244BB", green: "#1D8C1D",
+                        orange: "#E67E22", yellow: "#CCAA00", purple: "#9933CC",
+                        white: "#EDEDED", gray: "#777777", black: "#111111",
+                    };
+                    const modColors = {
+                        red: "#FF4444", blue: "#4488FF", green: "#44DD44",
+                        orange: "#FF9E3D", yellow: "#FFDD44", purple: "#BB66FF",
+                        white: "#FFFFFF", gray: "#AAAAAA", black: "#222222",
+                    };
+
+                    const badgeR = Math.max(size * 0.20, 6);
+                    const badgeX = x - size * 0.34;
+                    const badgeY = y + size * 0.30;
+
+                    ctx.beginPath();
+                    ctx.arc(badgeX, badgeY, badgeR, 0, Math.PI * 2);
+                    ctx.fillStyle = badgeColors[copied.color] || "#555";
+                    ctx.fill();
+                    ctx.strokeStyle = "rgba(0,0,0,0.55)";
+                    ctx.lineWidth = 1.5;
+                    ctx.stroke();
+
+                    ctx.fillStyle = copied.color === "white" ? "rgba(20,20,20,0.9)" : "rgba(255,255,255,0.92)";
+                    ctx.font = `bold ${Math.max(size * 0.24, 8)}px 'Segoe UI', system-ui, sans-serif`;
+                    ctx.textAlign = "center";
+                    ctx.textBaseline = "middle";
+                    ctx.fillText(symbols[copied.color] || "?", badgeX, badgeY + 0.5);
+
+                    if (copied.modifier) {
+                        const dotR = Math.max(size * 0.075, 2.5);
+                        ctx.beginPath();
+                        ctx.arc(badgeX + badgeR * 0.62, badgeY - badgeR * 0.62, dotR, 0, Math.PI * 2);
+                        ctx.fillStyle = modColors[copied.modifier] || "#fff";
+                        ctx.fill();
+                        ctx.strokeStyle = "#000";
+                        ctx.lineWidth = 1;
+                        ctx.stroke();
+                    }
+                }
+            }
 
             // Modifier dot
             if (piece.modifier) {
                 const modColors = {
                     red: "#FF4444", blue: "#4488FF", green: "#44DD44",
-                    yellow: "#FFDD44", purple: "#BB66FF", gray: "#AAAAAA",
+                    orange: "#FF9E3D", yellow: "#FFDD44", purple: "#BB66FF",
+                    white: "#FFFFFF", gray: "#AAAAAA", black: "#222222",
                 };
                 const dotR = Math.max(size * 0.16, 4);
                 ctx.beginPath();
@@ -227,11 +274,11 @@ class Renderer {
             }
         } else {
             // Empty cell
-            if (this.placementMode && isHovered) {
+            if ((this.placementMode && isHovered) || isTutorialTarget) {
                 ctx.fillStyle = "rgba(0, 255, 136, 0.12)";
                 ctx.fill();
-                ctx.strokeStyle = "rgba(0, 255, 136, 0.4)";
-                ctx.lineWidth = 2;
+                ctx.strokeStyle = isTutorialTarget ? "rgba(255, 215, 0, 0.6)" : "rgba(0, 255, 136, 0.4)";
+                ctx.lineWidth = isTutorialTarget ? 3 : 2;
                 ctx.setLineDash([4, 4]);
                 ctx.stroke();
                 ctx.setLineDash([]);
@@ -275,7 +322,8 @@ class Renderer {
         const { x, y } = this.hexToPixel(q, r);
         const colors = {
             red: "#ff4444", blue: "#4488ff", green: "#44dd44",
-            yellow: "#ffdd44", purple: "#bb66ff", gray: "#aaaaaa",
+            orange: "#ff9e3d", yellow: "#ffdd44", purple: "#bb66ff",
+            white: "#f3f3f3", gray: "#aaaaaa", black: "#333333",
         };
         const c = colors[color] || "#ffffff";
 
@@ -353,8 +401,14 @@ class Renderer {
         this._editorOX = ox;
         this._editorOY = oy;
 
-        const COLORS = { red: "#DD2222", blue: "#2244CC", green: "#22AA22", yellow: "#EECC00", purple: "#9933CC", gray: "#999999" };
-        const SYMBOLS = { red: "♦", blue: "●", green: "■", yellow: "▲", purple: "✦", gray: "▬" };
+        const COLORS = {
+            red: "#DD2222", blue: "#2244CC", green: "#22AA22", orange: "#E67E22",
+            yellow: "#EECC00", purple: "#9933CC", white: "#F2F2F2", gray: "#999999", black: "#111111"
+        };
+        const SYMBOLS = {
+            red: "♦", blue: "●", green: "■", orange: "⬟", yellow: "▲",
+            purple: "✦", white: "◉", gray: "▬", black: "⬢"
+        };
 
         for (let r = 0; r < rows; r++) {
             for (let q = 0; q < cols; q++) {

@@ -1,11 +1,35 @@
 // editor.js — Level Editor for HexTatics
+function encodeBase64Utf8(text) {
+    if (typeof TextEncoder !== "undefined") {
+        const bytes = new TextEncoder().encode(text);
+        let binary = "";
+        for (const b of bytes) binary += String.fromCharCode(b);
+        return btoa(binary);
+    }
+    const utf8Binary = encodeURIComponent(text).replace(/%([0-9A-F]{2})/g, (_, hex) => {
+        return String.fromCharCode(parseInt(hex, 16));
+    });
+    return btoa(utf8Binary);
+}
+
+function decodeBase64Utf8(base64) {
+    const binary = atob(base64);
+    if (typeof TextDecoder !== "undefined") {
+        const bytes = new Uint8Array(binary.length);
+        for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+        return new TextDecoder().decode(bytes);
+    }
+    const percentEncoded = Array.from(binary, ch => `%${ch.charCodeAt(0).toString(16).padStart(2, "0")}`).join("");
+    return decodeURIComponent(percentEncoded);
+}
+
 class Editor {
     constructor() {
         this.cols = 7;
         this.rows = 6;
         this.mask = [];
         this.pieces = new Map(); // "q,r" -> {color, modifier}
-        this.tool = "red";       // red|blue|green|yellow|gray|eraser|toggle|modifier
+        this.tool = "red";       // red|blue|green|orange|yellow|purple|white|gray|black|eraser|toggle|modifier
         this.modifierColor = "red";
         this.name = "Minha Fase";
         this.moveLimit = null;
@@ -117,7 +141,7 @@ class Editor {
             colorCounts[piece.color] = (colorCounts[piece.color] || 0) + 1;
         }
         // Auto-generate description from piece breakdown
-        const colorEmoji = { red: "♦", blue: "●", green: "■", yellow: "▲", purple: "✦", gray: "▬" };
+        const colorEmoji = { red: "♦", blue: "●", green: "■", orange: "⬟", yellow: "▲", purple: "✦", white: "◉", gray: "▬", black: "⬢" };
         const desc = Object.entries(colorCounts).map(([c, n]) => `${n}${colorEmoji[c] || "?"}`).join(" ") || "Vazia";
         const hasModifiers = pieces.some(p => p.modifier);
         const hasHoles = this.mask.some(row => row.some(v => !v));
@@ -156,7 +180,7 @@ class Editor {
 
     exportCode() {
         const level = this.toLevel();
-        const colorKey = { red: "r", blue: "b", green: "g", yellow: "y", purple: "p", gray: "x" };
+        const colorKey = { red: "r", blue: "b", green: "g", orange: "o", yellow: "y", purple: "p", white: "w", gray: "x", black: "k" };
         const maskStr = level.mask.map(row => row.map(v => v ? "1" : "0").join("")).join(",");
         const piecesStr = level.pieces.map(p => {
             let s = colorKey[p.color] + p.q + "." + p.r;
@@ -171,7 +195,7 @@ class Editor {
             maskStr,
             piecesStr
         ].join("|");
-        return "HEX-" + btoa(unescape(encodeURIComponent(data)));
+        return "HEX-" + encodeBase64Utf8(data);
     }
 
     importCode(input) {
@@ -179,10 +203,10 @@ class Editor {
         // Try compact code first
         if (input.startsWith("HEX-")) {
             try {
-                const data = decodeURIComponent(escape(atob(input.slice(4))));
+                const data = decodeBase64Utf8(input.slice(4));
                 const parts = data.split("|");
                 if (parts.length < 6) return false;
-                const keyColor = { r: "red", b: "blue", g: "green", y: "yellow", p: "purple", x: "gray" };
+                const keyColor = { r: "red", b: "blue", g: "green", o: "orange", y: "yellow", p: "purple", w: "white", x: "gray", k: "black" };
                 const [name, size, limit, par, maskStr, piecesStr] = parts;
                 const [cols, rows] = size.split("x").map(Number);
                 const mask = maskStr.split(",").map(row => row.split("").map(c => c === "1"));
@@ -191,7 +215,7 @@ class Editor {
                     const rest = s.slice(1);
                     const dotIdx = rest.indexOf(".");
                     const afterDot = rest.slice(dotIdx + 1);
-                    const modChar = afterDot.match(/[rbgyxp]$/);
+                    const modChar = afterDot.match(/[rbgoypwxk]$/);
                     const q = parseInt(rest.slice(0, dotIdx));
                     const r = parseInt(modChar ? afterDot.slice(0, -1) : afterDot);
                     const p = { q, r, color };
@@ -252,7 +276,7 @@ class Editor {
     }
 
     static codeFromLevel(level) {
-        const colorKey = { red: "r", blue: "b", green: "g", yellow: "y", purple: "p", gray: "x" };
+        const colorKey = { red: "r", blue: "b", green: "g", orange: "o", yellow: "y", purple: "p", white: "w", gray: "x", black: "k" };
         const maskStr = level.mask.map(row => row.map(v => v ? "1" : "0").join("")).join(",");
         const piecesStr = level.pieces.map(p => {
             let s = colorKey[p.color] + p.q + "." + p.r;
@@ -260,7 +284,7 @@ class Editor {
             return s;
         }).join(";");
         const data = [level.name, level.gridSize.cols + "x" + level.gridSize.rows, level.moveLimit || 0, level.par, maskStr, piecesStr].join("|");
-        return "HEX-" + btoa(unescape(encodeURIComponent(data)));
+        return "HEX-" + encodeBase64Utf8(data);
     }
 
     loadCustomLevels() {

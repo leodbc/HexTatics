@@ -111,9 +111,13 @@ class SaveManager {
         return this.data.bestMoves[levelId] || null;
     }
 
-    isUnlocked(levelId) {
+    isUnlocked(levelId, levels) {
+        if (Array.isArray(levels) && levels.length > 0) {
+            const idx = levels.findIndex(l => l.id === levelId);
+            if (idx <= 0) return idx === 0;
+            return this.isCompleted(levels[idx - 1].id);
+        }
         if (levelId === 1) return true;
-        // Unlock next level when previous is completed
         return this.isCompleted(levelId - 1);
     }
 
@@ -149,6 +153,7 @@ class Game {
         this.won = false;
         this.moveLimitExceeded = false;
         this.selectedHandPiece = null;
+        this.lastRemovedPiece = null;
         this.sound = new SoundManager();
         this.save = new SaveManager();
     }
@@ -165,6 +170,7 @@ class Game {
         this.won = false;
         this.moveLimitExceeded = false;
         this.selectedHandPiece = null;
+        this.lastRemovedPiece = null;
 
         for (const p of levelDef.pieces) {
             const key = `${p.q},${p.r}`;
@@ -218,78 +224,122 @@ class Game {
 
     static OPPOSITES = { NE: "SW", SW: "NE", SE: "NW", NW: "SE", N: "S", S: "N" };
 
+    static DIR_ORDER = ["NE", "SE", "S", "SW", "NW", "N"];
+
+    _matchesNeighborFilter(piece, neighborPiece, options = {}) {
+        if (!neighborPiece) return false;
+        if (piece.modifier) return neighborPiece.color === piece.modifier;
+        if (options.excludeBlack && neighborPiece.color === "black") return false;
+        return true;
+    }
+
+    _getNeighborContext(q, r, piece, options = {}) {
+        const validNeighbors = this.getNeighbors(q, r).filter(n => this.cellExists(n.q, n.r));
+        const filledDirs = [];
+        let filledCount = 0;
+
+        for (const n of validNeighbors) {
+            const np = this.getPiece(n.q, n.r);
+            if (this._matchesNeighborFilter(piece, np, options)) {
+                filledCount++;
+                filledDirs.push(n.dir);
+            }
+        }
+
+        return {
+            validNeighbors,
+            totalSlots: validNeighbors.length,
+            filledCount,
+            filledDirs,
+        };
+    }
+
+    _areDirsConnected(filledDirs) {
+        if (filledDirs.length === 0) return false;
+        const indexSet = new Set(filledDirs.map(d => Game.DIR_ORDER.indexOf(d)).filter(i => i >= 0));
+        if (indexSet.size !== filledDirs.length) return false;
+
+        const visited = new Set();
+        const start = [...indexSet][0];
+        const stack = [start];
+
+        while (stack.length > 0) {
+            const idx = stack.pop();
+            if (visited.has(idx)) continue;
+            visited.add(idx);
+            const left = (idx + 5) % 6;
+            const right = (idx + 1) % 6;
+            if (indexSet.has(left) && !visited.has(left)) stack.push(left);
+            if (indexSet.has(right) && !visited.has(right)) stack.push(right);
+        }
+
+        return visited.size === indexSet.size;
+    }
+
+    _canRemoveByPieceRule(piece, q, r, allowGrayProxy = true) {
+        if (piece.color === "white") {
+            return this.hand.every(p => p.color === "white");
+        }
+
+        if (piece.color === "black") {
+            const selfKey = `${q},${r}`;
+            for (const [key, p] of this.board) {
+                if (key === selfKey) continue;
+                if (p.color !== "black") return false;
+            }
+            return true;
+        }
+
+        if (piece.color === "gray") {
+            if (!allowGrayProxy || !this.lastRemovedPiece) return false;
+            const proxyPiece = {
+                color: this.lastRemovedPiece.color,
+                modifier: this.lastRemovedPiece.modifier || null,
+            };
+            if (proxyPiece.color === "gray") return false;
+            return this._canRemoveByPieceRule(proxyPiece, q, r, false);
+        }
+
+        const excludeBlack = ["red", "blue", "yellow", "purple"].includes(piece.color);
+        const ctx = this._getNeighborContext(q, r, piece, { excludeBlack });
+
+        switch (piece.color) {
+            case "red":
+                return ctx.filledCount >= 1 && ctx.filledCount < ctx.totalSlots;
+
+            case "blue":
+                return ctx.filledCount === 0;
+
+            case "green":
+                return ctx.filledCount >= 2 && this._areDirsConnected(ctx.filledDirs);
+
+            case "orange":
+                return ctx.totalSlots > 0 && ctx.filledCount === ctx.totalSlots;
+
+            case "yellow":
+                if (ctx.filledCount !== 3) return false;
+                for (const dir of ctx.filledDirs) {
+                    const opp = Game.OPPOSITES[dir];
+                    if (ctx.filledDirs.includes(opp)) return false;
+                }
+                return true;
+
+            case "purple":
+                if (ctx.filledCount !== 2) return false;
+                return ctx.filledDirs.length === 2 && Game.OPPOSITES[ctx.filledDirs[0]] === ctx.filledDirs[1];
+
+            default:
+                return false;
+        }
+    }
+
     // ===================== PIECE RULES =====================
 
     canRemove(q, r) {
         const piece = this.getPiece(q, r);
         if (!piece) return false;
 
-        const neighbors = this.getNeighbors(q, r);
-
-        // Gray piece logic
-        if (piece.color === "gray") {
-            if (piece.modifier) {
-                // Gray with modifier: removable when no pieces of modifier color remain
-                for (const [, p] of this.board) {
-                    if (p.color === piece.modifier) return false;
-                }
-                return true;
-            }
-            // Plain gray: only removable when no non-gray pieces remain
-            for (const [, p] of this.board) {
-                if (p.color !== "gray") return false;
-            }
-            return true;
-        }
-
-        // Valid neighbors (exist on board and have cells)
-        const validNeighbors = neighbors.filter(n => this.cellExists(n.q, n.r));
-
-        // Count filled neighbors
-        let filledCount = 0;
-        let totalSlots = 0;
-        const filledDirs = [];
-
-        for (const n of validNeighbors) {
-            const np = this.getPiece(n.q, n.r);
-            // Skip gray neighbors only when no modifier targets gray
-            if (np && np.color === "gray" && piece.modifier !== "gray") continue;
-
-            totalSlots++;
-            if (np) {
-                // If modifier active, only count matching color
-                if (piece.modifier && np.color !== piece.modifier) continue;
-                filledCount++;
-                filledDirs.push(n.dir);
-            }
-        }
-
-        switch (piece.color) {
-            case "red":
-                return filledCount >= 1 && filledCount < totalSlots;
-
-            case "blue":
-                return filledCount === 0;
-
-            case "green":
-                return totalSlots > 0 && filledCount === totalSlots;
-
-            case "yellow":
-                if (filledCount !== 3) return false;
-                for (const dir of filledDirs) {
-                    const opp = Game.OPPOSITES[dir];
-                    if (filledDirs.includes(opp)) return false;
-                }
-                return true;
-
-            case "purple":
-                if (filledCount !== 2) return false;
-                // Must be an opposite pair
-                return filledDirs.length === 2 && Game.OPPOSITES[filledDirs[0]] === filledDirs[1];
-
-            default:
-                return false;
-        }
+        return this._canRemoveByPieceRule(piece, q, r, true);
     }
 
     removePiece(q, r) {
@@ -302,12 +352,14 @@ class Game {
             piece: { ...piece },
             handBefore: this.hand.map(p => ({ ...p })),
             movesBefore: this.moves,
+            lastRemovedBefore: this.lastRemovedPiece ? { ...this.lastRemovedPiece } : null,
         });
 
         this.board.delete(key);
-        if (piece.color !== "gray") {
+        if (piece.color !== "gray" && piece.color !== "black") {
             this.hand.push({ ...piece });
         }
+        this.lastRemovedPiece = { color: piece.color, modifier: piece.modifier || null };
         this.moves++;
 
         if (this.moveLimit && this.moves > this.moveLimit) {
@@ -328,6 +380,7 @@ class Game {
             piece: { ...piece },
             handBefore: this.hand.map(p => ({ ...p })),
             movesBefore: this.moves,
+            lastRemovedBefore: this.lastRemovedPiece ? { ...this.lastRemovedPiece } : null,
         });
 
         this.board.set(`${q},${r}`, { ...piece });
@@ -354,6 +407,7 @@ class Game {
         }
 
         this.moves = action.movesBefore;
+        this.lastRemovedPiece = action.lastRemovedBefore ? { ...action.lastRemovedBefore } : null;
         this.moveLimitExceeded = false;
         this.won = false;
         this.selectedHandPiece = null;
@@ -366,7 +420,10 @@ class Game {
             if (this.onWinHook && !this.onWinHook()) return false;
 
             this.won = true;
-            if (this.currentLevel) {
+            const isOfficialLevel = this.currentLevel
+                && Number.isInteger(this.currentLevel.id)
+                && !this.currentLevel.custom;
+            if (isOfficialLevel) {
                 this.save.completeLevel(this.currentLevel.id, this.moves);
             }
             return true;
@@ -380,12 +437,15 @@ class Game {
         if (!piece) return null;
 
         const rules = {
-            red: { name: "Vermelha", rule: "Remove com 1+ vizinhas (não todas)." },
-            blue: { name: "Azul", rule: "Remove só quando isolada (0 vizinhas)." },
-            green: { name: "Verde", rule: "Remove só com TODAS vizinhas preenchidas." },
-            yellow: { name: "Amarela", rule: "Remove com exatamente 3 vizinhas sem opostas." },
-            purple: { name: "Roxa", rule: "Remove com exatamente 2 vizinhas em lados opostos." },
-            gray: { name: "Cinza", rule: "Remove só quando sobrar apenas cinzas." },
+            red: { name: "Vermelha", rule: "Remove com 1+ vizinhas (exceto pretas), mas não todas." },
+            blue: { name: "Azul", rule: "Remove só quando isolada (0 vizinhas, exceto pretas)." },
+            green: { name: "Verde", rule: "Remove com 2+ vizinhas conectadas entre si." },
+            orange: { name: "Laranja", rule: "Remove quando TODAS as casas adjacentes estão preenchidas." },
+            yellow: { name: "Amarela", rule: "Remove com exatamente 3 vizinhas sem opostas (exceto pretas)." },
+            purple: { name: "Roxa", rule: "Remove com exatamente 2 vizinhas opostas (exceto pretas)." },
+            white: { name: "Branca", rule: "Remove só se não houver peças de outras cores na mão." },
+            gray: { name: "Cinza", rule: "Copia regra e modificador da última peça removida." },
+            black: { name: "Preta", rule: "Remove só quando restarem apenas pretas no tabuleiro." },
         };
 
         const info = rules[piece.color] || { name: "?", rule: "" };
@@ -394,7 +454,7 @@ class Game {
         if (piece.modifier) {
             const modName = rules[piece.modifier]?.name || piece.modifier;
             if (piece.color === "gray") {
-                info.rule = `Remove quando todas as ${modName}s forem removidas.`;
+                info.rule += ` Mod: ao copiar, só conta vizinhas ${modName}s.`;
             } else {
                 info.rule += ` Mod: só conta vizinhas ${modName}s.`;
             }
