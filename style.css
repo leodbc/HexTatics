@@ -1819,7 +1819,7 @@ body {
     }
 
     #editor-toolbar {
-        max-height: 42dvh;
+        max-height: 22svh;
         overflow-y: auto;
         padding-bottom: calc(10px + env(safe-area-inset-bottom));
     }
