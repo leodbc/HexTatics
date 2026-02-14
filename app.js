@@ -5,6 +5,8 @@
             const game = new Game();
             const renderer = new Renderer(canvas, game);
             const editor = new Editor();
+            // Expose editor instance globally so the Export JSON button can access it
+            window.editor = editor;
 
             const params = new URLSearchParams(window.location.search);
             const COMMUNITY_ENABLED = (window.COMMUNITY_ENABLED ?? false) || params.get("community") === "true";

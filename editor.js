@@ -198,6 +198,15 @@ class Editor {
         return "HEX-" + encodeBase64Utf8(data);
     }
 
+    exportJson() {
+        // Exporta a fase atual como JSON no modelo do levels.js
+        const level = this.toLevel();
+        // Remove campos que não aparecem no arquivo `levels.js` original
+        const { custom, pieceCount, ...json } = level;
+        // Formata bonito (2 espaços)
+        return JSON.stringify(json, null, 2);
+    }
+
     importCode(input) {
         input = input.trim();
         // Try compact code first
@@ -297,4 +306,22 @@ class Editor {
     _persist() {
         localStorage.setItem("hextatics_custom", JSON.stringify(this.customLevels));
     }
+}
+
+// Handler do botão Exportar JSON
+if (typeof window !== "undefined") {
+    window.addEventListener("DOMContentLoaded", () => {
+        const btn = document.getElementById("editor-export-json");
+        if (btn && window.editor) {
+            btn.onclick = () => {
+                const json = window.editor.exportJson();
+                if (navigator.clipboard) {
+                    navigator.clipboard.writeText(json);
+                    alert("JSON copiado para a área de transferência!");
+                } else {
+                    prompt("Copie o JSON:", json);
+                }
+            };
+        }
+    });
 }
