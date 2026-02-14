@@ -278,11 +278,28 @@ class Game {
 
     _canRemoveByPieceRule(piece, q, r, allowGrayProxy = true) {
         if (piece.color === "white") {
+            // If white has a modifier (e.g. modifier: 'red'), it is removable
+            // when the hand contains no pieces of that modifier color.
+            if (piece.modifier) {
+                return this.hand.every(p => p.color !== piece.modifier);
+            }
+            // Default: removable only if hand contains only whites (or is empty).
             return this.hand.every(p => p.color === "white");
         }
 
         if (piece.color === "black") {
             const selfKey = `${q},${r}`;
+            // If black has a modifier (e.g. modifier: 'red'), it becomes a
+            // conditional-black: removable when there are no more pieces of
+            // that modifier color left on the board.
+            if (piece.modifier) {
+                for (const [key, p] of this.board) {
+                    if (key === selfKey) continue;
+                    if (p.color === piece.modifier) return false;
+                }
+                return true;
+            }
+            // Default black behavior: removable only when all remaining pieces are black.
             for (const [key, p] of this.board) {
                 if (key === selfKey) continue;
                 if (p.color !== "black") return false;
@@ -455,6 +472,10 @@ class Game {
             const modName = rules[piece.modifier]?.name || piece.modifier;
             if (piece.color === "gray") {
                 info.rule += ` Mod: ao copiar, só conta vizinhas ${modName}s.`;
+            } else if (piece.color === "white") {
+                info.rule += ` Mod: removível se não houver ${modName}s na mão.`;
+            } else if (piece.color === "black") {
+                info.rule += ` Mod: removível quando não houver mais ${modName}s no tabuleiro.`;
             } else {
                 info.rule += ` Mod: só conta vizinhas ${modName}s.`;
             }

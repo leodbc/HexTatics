@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
-    <!-- MVP PRONTO -->
+<!-- MVP PRONTO -->
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -46,7 +47,8 @@
                 <div>⚠️ Não foi possível carregar. Tente novamente.</div>
                 <button class="btn" id="community-retry">Tentar novamente</button>
             </div>
-            <div class="empty-state" id="community-empty" style="display:none;">🗺️ Nenhum mapa encontrado ainda. Seja o primeiro!</div>
+            <div class="empty-state" id="community-empty" style="display:none;">🗺️ Nenhum mapa encontrado ainda. Seja o
+                primeiro!</div>
             <div class="community-grid" id="community-grid"></div>
         </div>
         <div class="community-actions">
@@ -66,7 +68,8 @@
             <span id="level-timer" class="timer-badge">0:00</span>
         </div>
         <div class="hud-right">
-            <button class="btn btn-icon btn-editor-hud" id="btn-editor-hud" style="display:none;" title="Voltar ao Editor">🔧</button>
+            <button class="btn btn-icon btn-editor-hud" id="btn-editor-hud" style="display:none;"
+                title="Voltar ao Editor">🔧</button>
             <button class="btn btn-icon btn-undo" id="btn-undo" title="Desfazer (Ctrl+Z)">⟲</button>
             <button class="btn btn-icon btn-pause" id="btn-pause" title="Pausar">⏸</button>
         </div>
@@ -129,15 +132,24 @@
     <div id="editor-toolbar" style="display:none;">
         <div class="editor-tools">
             <div class="editor-section">
-                <button class="editor-tool active" data-tool="red" title="Vermelha ♦"><span class="tool-swatch" style="background:#DD2222;"></span></button>
-                <button class="editor-tool" data-tool="blue" title="Azul ●"><span class="tool-swatch" style="background:#2244CC;"></span></button>
-                <button class="editor-tool" data-tool="green" title="Verde ■"><span class="tool-swatch" style="background:#22AA22;"></span></button>
-                <button class="editor-tool" data-tool="orange" title="Laranja ⬟"><span class="tool-swatch" style="background:#E67E22;"></span></button>
-                <button class="editor-tool" data-tool="yellow" title="Amarela ▲"><span class="tool-swatch" style="background:#EECC00;"></span></button>
-                <button class="editor-tool" data-tool="purple" title="Roxa ✦"><span class="tool-swatch" style="background:#9933CC;"></span></button>
-                <button class="editor-tool" data-tool="white" title="Branca ◉"><span class="tool-swatch" style="background:#F2F2F2;"></span></button>
-                <button class="editor-tool" data-tool="gray" title="Cinza ▬"><span class="tool-swatch" style="background:#999;"></span></button>
-                <button class="editor-tool" data-tool="black" title="Preta ⬢"><span class="tool-swatch" style="background:#111;"></span></button>
+                <button class="editor-tool active" data-tool="red" title="Vermelha ♦"><span class="tool-swatch"
+                        style="background:#DD2222;"></span></button>
+                <button class="editor-tool" data-tool="blue" title="Azul ●"><span class="tool-swatch"
+                        style="background:#2244CC;"></span></button>
+                <button class="editor-tool" data-tool="green" title="Verde ■"><span class="tool-swatch"
+                        style="background:#22AA22;"></span></button>
+                <button class="editor-tool" data-tool="orange" title="Laranja ⬟"><span class="tool-swatch"
+                        style="background:#E67E22;"></span></button>
+                <button class="editor-tool" data-tool="yellow" title="Amarela ▲"><span class="tool-swatch"
+                        style="background:#EECC00;"></span></button>
+                <button class="editor-tool" data-tool="purple" title="Roxa ✦"><span class="tool-swatch"
+                        style="background:#9933CC;"></span></button>
+                <button class="editor-tool" data-tool="white" title="Branca ◉"><span class="tool-swatch"
+                        style="background:#F2F2F2;"></span></button>
+                <button class="editor-tool" data-tool="gray" title="Cinza ▬"><span class="tool-swatch"
+                        style="background:#999;"></span></button>
+                <button class="editor-tool" data-tool="black" title="Preta ⬢"><span class="tool-swatch"
+                        style="background:#111;"></span></button>
                 <span class="editor-divider"></span>
                 <button class="editor-tool" data-tool="eraser" title="Apagar peça">🧹</button>
                 <button class="editor-tool" data-tool="toggle" title="Criar/remover buraco">🕳️</button>
@@ -145,21 +157,32 @@
             </div>
             <div class="editor-mod-palette" id="editor-mod-palette" style="display:none;">
                 <span class="editor-mod-label">Mod:</span>
-                <button class="editor-mod active" data-mod="red"><span class="mod-dot" style="background:#DD2222;"></span></button>
-                <button class="editor-mod" data-mod="blue"><span class="mod-dot" style="background:#2244CC;"></span></button>
-                <button class="editor-mod" data-mod="green"><span class="mod-dot" style="background:#22AA22;"></span></button>
-                <button class="editor-mod" data-mod="orange"><span class="mod-dot" style="background:#E67E22;"></span></button>
-                <button class="editor-mod" data-mod="yellow"><span class="mod-dot" style="background:#EECC00;"></span></button>
-                <button class="editor-mod" data-mod="purple"><span class="mod-dot" style="background:#9933CC;"></span></button>
-                <button class="editor-mod" data-mod="white"><span class="mod-dot" style="background:#F2F2F2;"></span></button>
-                <button class="editor-mod" data-mod="gray"><span class="mod-dot" style="background:#999;"></span></button>
-                <button class="editor-mod" data-mod="black"><span class="mod-dot" style="background:#111;"></span></button>
+                <button class="editor-mod active" data-mod="red"><span class="mod-dot"
+                        style="background:#DD2222;"></span></button>
+                <button class="editor-mod" data-mod="blue"><span class="mod-dot"
+                        style="background:#2244CC;"></span></button>
+                <button class="editor-mod" data-mod="green"><span class="mod-dot"
+                        style="background:#22AA22;"></span></button>
+                <button class="editor-mod" data-mod="orange"><span class="mod-dot"
+                        style="background:#E67E22;"></span></button>
+                <button class="editor-mod" data-mod="yellow"><span class="mod-dot"
+                        style="background:#EECC00;"></span></button>
+                <button class="editor-mod" data-mod="purple"><span class="mod-dot"
+                        style="background:#9933CC;"></span></button>
+                <button class="editor-mod" data-mod="white"><span class="mod-dot"
+                        style="background:#F2F2F2;"></span></button>
+                <button class="editor-mod" data-mod="gray"><span class="mod-dot"
+                        style="background:#999;"></span></button>
+                <button class="editor-mod" data-mod="black"><span class="mod-dot"
+                        style="background:#111;"></span></button>
             </div>
         </div>
         <div class="editor-actions">
             <div class="editor-settings">
-                <label>Limite: <input type="number" id="editor-move-limit" min="0" max="99" value="" placeholder="∞" class="editor-num-input"></label>
-                <label>Par: <input type="number" id="editor-par" min="1" max="99" value="" placeholder="auto" class="editor-num-input"></label>
+                <label>Limite: <input type="number" id="editor-move-limit" min="0" max="99" value="" placeholder="∞"
+                        class="editor-num-input"></label>
+                <label>Par: <input type="number" id="editor-par" min="1" max="99" value="" placeholder="auto"
+                        class="editor-num-input"></label>
             </div>
             <div class="editor-buttons">
                 <button class="btn btn-accent" id="editor-test">▶ Testar</button>
@@ -274,7 +297,8 @@
             <div class="rules-grid">
                 <div class="rule-row">
                     <div class="rule-swatch" style="background:#CC2222;">♦</div>
-                    <div class="rule-text"><strong>Vermelha</strong><br>1+ vizinhas (ignora pretas), mas não todas.</div>
+                    <div class="rule-text"><strong>Vermelha</strong><br>1+ vizinhas (ignora pretas), mas não todas.
+                    </div>
                 </div>
                 <div class="rule-row">
                     <div class="rule-swatch" style="background:#2244BB;">●</div>
@@ -287,11 +311,13 @@
                 </div>
                 <div class="rule-row">
                     <div class="rule-swatch" style="background:#E67E22;">⬟</div>
-                    <div class="rule-text"><strong>Laranja</strong><br>Remove quando TODAS as casas adjacentes estão preenchidas.</div>
+                    <div class="rule-text"><strong>Laranja</strong><br>Remove quando TODAS as casas adjacentes estão
+                        preenchidas.</div>
                 </div>
                 <div class="rule-row">
                     <div class="rule-swatch" style="background:#CCAA00;">▲</div>
-                    <div class="rule-text"><strong>Amarela</strong><br>Exatamente 3 vizinhas sem pares opostos (ignora pretas).</div>
+                    <div class="rule-text"><strong>Amarela</strong><br>Exatamente 3 vizinhas sem pares opostos (ignora
+                        pretas).</div>
                 </div>
                 <div class="rule-row">
                     <div class="rule-swatch" style="background:#9933CC;">✦</div>
@@ -299,15 +325,18 @@
                 </div>
                 <div class="rule-row">
                     <div class="rule-swatch" style="background:#F2F2F2; color:#222;">◉</div>
-                    <div class="rule-text"><strong>Branca</strong><br>Remove só se sua mão não tiver peças de outras cores.</div>
+                    <div class="rule-text"><strong>Branca</strong><br>Remove só se sua mão não tiver peças de outras
+                        cores.</div>
                 </div>
                 <div class="rule-row">
                     <div class="rule-swatch" style="background:#666;">▬</div>
-                    <div class="rule-text"><strong>Cinza</strong><br>Copia regra + modificador da última peça removida.</div>
+                    <div class="rule-text"><strong>Cinza</strong><br>Copia regra + modificador da última peça removida.
+                    </div>
                 </div>
                 <div class="rule-row">
                     <div class="rule-swatch" style="background:#111;">⬢</div>
-                    <div class="rule-text"><strong>Preta</strong><br>Parede imóvel: remove só quando restarem apenas pretas.</div>
+                    <div class="rule-text"><strong>Preta</strong><br>Parede imóvel: remove só quando restarem apenas
+                        pretas.</div>
                 </div>
             </div>
             <div class="help-extras">
@@ -341,7 +370,8 @@
                 <option value="other">Outro</option>
             </select>
             <label>Detalhes (opcional)
-                <input type="text" id="report-detail" maxlength="120" class="editor-name-input" style="width:100%;" placeholder="Descreva rapidamente">
+                <input type="text" id="report-detail" maxlength="120" class="editor-name-input" style="width:100%;"
+                    placeholder="Descreva rapidamente">
             </label>
             <div class="level-select-actions">
                 <button class="btn btn-accent" id="report-confirm">Enviar denúncia</button>
