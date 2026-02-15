@@ -30,7 +30,7 @@
         <button class="btn-play" id="btn-start">▶ Jogar</button>
         <button class="btn-tutorial" id="btn-maps">🌍 Mapas</button>
         <button class="btn-continue" id="btn-continue" style="display:none;">▶ Continuar</button>
-        <button class="btn-editor-welcome" id="btn-editor-welcome">🔧 Criar Fase</button>
+        <button class="btn-editor-welcome" id="btn-editor-welcome">🔧 Criar Mapa</button>
     </div>
 
     <!-- Comunidade de Mapas -->
@@ -185,14 +185,14 @@
                         class="editor-num-input"></label>
             </div>
             <div class="editor-buttons">
-                <button class="btn btn-accent" id="editor-test">▶ Testar</button>
-                <button class="btn" id="editor-save">💾 Salvar</button>
-                <button class="btn" id="editor-publish">📤 Publicar</button>
-                <button class="btn" id="editor-export">📤</button>
-                <button class="btn" id="editor-import">📥</button>
-                <button class="btn" id="editor-export-json">Exportar JSON</button>
+                <button class="btn btn-accent" id="editor-test">Testar</button>
+                <button class="btn" id="editor-save">Salvar</button>
+                <button class="btn" id="editor-publish">Publicar</button>
+                <button class="btn" id="editor-export">Exportar</button>
+                <button class="btn" id="editor-import">Importar</button>
             </div>
         </div>
+
     </div>
 
     <!-- Confetti Canvas -->
@@ -357,6 +357,27 @@
             <div class="level-select-actions">
                 <button class="btn btn-accent" id="publish-confirm">Publicar</button>
                 <button class="btn" id="publish-cancel">Cancelar</button>
+            </div>
+        </div>
+
+        <!-- Export Modal -->
+        <div class="modal" id="export-modal" style="display:none;">
+            <h2>Exportar Fase</h2>
+            <div style="display:flex;gap:12px;flex-wrap:wrap;justify-content:center;margin-top:12px;">
+                <button class="btn btn-accent" id="export-json-btn">Exportar como JSON</button>
+                <button class="btn btn-accent" id="export-code-btn">Exportar como Código (HEX)</button>
+            </div>
+            <p style="color:var(--text-dim);font-size:0.9em;margin-top:12px;text-align:center;">Ao clicar, o conteúdo será copiado para a área de transferência.</p>
+        </div>
+
+        <!-- Import Modal -->
+        <div class="modal" id="import-modal" style="display:none;">
+            <h2>Importar Fase</h2>
+            <p>Cole aqui o código HEX ou JSON da fase:</p>
+            <textarea id="import-textarea" style="width:100%;height:160px;margin-top:12px;resize:vertical;"></textarea>
+            <div style="margin-top:8px;display:flex;gap:8px;justify-content:flex-end;">
+                <button class="btn btn-accent" id="import-confirm-btn">Importar</button>
+                <button class="btn" id="import-cancel-btn">Cancelar</button>
             </div>
         </div>
 

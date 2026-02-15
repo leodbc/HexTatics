@@ -738,6 +738,7 @@ body {
 .level-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
+    grid-auto-rows: 1fr; /* ensure uniform card heights */
     gap: 8px;
     margin: 12px 0;
 }
@@ -750,6 +751,9 @@ body {
     cursor: pointer;
     transition: all 0.2s ease;
     position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
 }
 
 .level-card:hover {
@@ -1366,6 +1370,8 @@ body {
     display: flex !important;
     flex-direction: column;
     gap: 8px;
+    height: 100%;
+    box-sizing: border-box;
 }
 
 .custom-card-header {
@@ -1409,8 +1415,16 @@ body {
 
 .custom-card-actions {
     display: flex;
-    gap: 4px;
+    gap: 6px;
     justify-content: flex-end;
+    flex-wrap: wrap; /* allow buttons to wrap instead of overflowing */
+}
+
+/* Force custom levels list to a single column to avoid cramped action buttons */
+#custom-level-grid {
+    display: grid;
+    grid-template-columns: 1fr !important;
+    gap: 10px;
 }
 
 .custom-card-actions .btn {

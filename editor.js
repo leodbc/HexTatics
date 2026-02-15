@@ -199,12 +199,36 @@ class Editor {
     }
 
     exportJson() {
-        // Exporta a fase atual como JSON no modelo do levels.js
+        // Exporta a fase atual no estilo compacto usado em levels.js
         const level = this.toLevel();
-        // Remove campos que não aparecem no arquivo `levels.js` original
-        const { custom, pieceCount, ...json } = level;
-        // Formata bonito (2 espaços)
-        return JSON.stringify(json, null, 2);
+        const { custom, pieceCount, ...l } = level;
+        const esc = (s) => String(s).replace(/"/g, '\\"');
+        const idVal = (typeof l.id === 'number') ? String(l.id) : `"${esc(l.id)}"`;
+        const lines = [];
+        lines.push('{');
+        // header: id, name, category
+        lines.push(`    id: ${idVal}, name: "${esc(l.name)}", category: "${esc(l.category)}",`);
+        // description
+        lines.push(`    description: "${esc(l.description || '')}",`);
+        // gridSize, moveLimit, par
+        const moveLimitVal = l.moveLimit === null ? 'null' : l.moveLimit;
+        lines.push(`    gridSize: { cols: ${l.gridSize.cols}, rows: ${l.gridSize.rows} }, moveLimit: ${moveLimitVal}, par: ${l.par},`);
+        // mask
+        lines.push('    mask: [');
+        for (const row of l.mask) {
+            lines.push('        [' + row.map(v => v ? 'true' : 'false').join(', ') + '],');
+        }
+        lines.push('    ],');
+        // pieces
+        lines.push('    pieces: [');
+        for (const p of l.pieces) {
+            const parts = [`q: ${p.q}`, `r: ${p.r}`, `color: "${esc(p.color)}"`];
+            if (p.modifier !== undefined && p.modifier !== null) parts.push(`modifier: "${esc(p.modifier)}"`);
+            lines.push('        { ' + parts.join(', ') + ' },');
+        }
+        lines.push('    ]');
+        lines.push('}');
+        return lines.join('\n');
     }
 
     importCode(input) {
@@ -308,20 +332,4 @@ class Editor {
     }
 }
 
-// Handler do botão Exportar JSON
-if (typeof window !== "undefined") {
-    window.addEventListener("DOMContentLoaded", () => {
-        const btn = document.getElementById("editor-export-json");
-        if (btn && window.editor) {
-            btn.onclick = () => {
-                const json = window.editor.exportJson();
-                if (navigator.clipboard) {
-                    navigator.clipboard.writeText(json);
-                    alert("JSON copiado para a área de transferência!");
-                } else {
-                    prompt("Copie o JSON:", json);
-                }
-            };
-        }
-    });
-}
+// export button handled by app.js

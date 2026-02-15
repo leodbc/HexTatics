@@ -373,9 +373,8 @@ class Game {
         });
 
         this.board.delete(key);
-        if (piece.color !== "black") {
-            this.hand.push({ ...piece });
-        }
+        // All removed pieces return to the hand (including black)
+        this.hand.push({ ...piece });
         this.lastRemovedPiece = { color: piece.color, modifier: piece.modifier || null };
         this.moves++;
 
@@ -456,13 +455,13 @@ class Game {
         const rules = {
             red: { name: "Vermelha", rule: "Remove com 1+ vizinhas (exceto pretas), mas não todas." },
             blue: { name: "Azul", rule: "Remove só quando isolada (0 vizinhas, exceto pretas)." },
-            green: { name: "Verde", rule: "Remove com 2+ vizinhas conectadas entre si." },
+            green: { name: "Verde", rule: "Remove com 2+ vizinhas conectadas entre si (ignora pretas)." },
             orange: { name: "Laranja", rule: "Remove quando TODAS as casas adjacentes estão preenchidas." },
             yellow: { name: "Amarela", rule: "Remove com exatamente 3 vizinhas sem opostas (exceto pretas)." },
             purple: { name: "Roxa", rule: "Remove com exatamente 2 vizinhas opostas (exceto pretas)." },
             white: { name: "Branca", rule: "Remove só se não houver peças de outras cores na mão." },
             gray: { name: "Cinza", rule: "Copia regra e modificador da última peça removida." },
-            black: { name: "Preta", rule: "Remove só quando restarem apenas pretas no tabuleiro." },
+            black: { name: "Preta", rule: "Remove quando todas as outras peças forem removidas." },
         };
 
         const info = rules[piece.color] || { name: "?", rule: "" };

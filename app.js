@@ -225,7 +225,7 @@
             const phase = tutorialPhases[tutorialPhaseIndex];
             document.getElementById("level-name").textContent = `Tutorial: ${phase ? phase.title : "Tutorial"}`;
         } else {
-            document.getElementById("level-name").textContent = isCustomLevel ? `Personalizada: ${level.name}` : `${level.id}. ${level.name}`;
+            document.getElementById("level-name").textContent = isCustomLevel ? `Personalizada: ${level.name}` : `${level.name}`;
         }
         const moveEl = document.getElementById("move-counter");
         if (game.moveLimit) {
@@ -606,6 +606,29 @@
             actions.appendChild(likeBtn);
             actions.appendChild(shareBtn);
 
+            // If viewing "Meus Mapas" allow owner to delete their own published maps
+            if (communityTab === "mine") {
+                const delBtn = document.createElement("button");
+                delBtn.className = "btn btn-reset";
+                delBtn.dataset.action = "delete";
+                delBtn.textContent = "Excluir";
+                actions.appendChild(delBtn);
+                delBtn.addEventListener("click", async (e) => {
+                    e.stopPropagation();
+                    if (!api) return;
+                    if (!confirm(`Excluir "${map.title}" da comunidade? Esta ação removerá o mapa do feed.`)) return;
+                    try {
+                        await api.deleteMap(map.id);
+                        showStatus("Mapa removido.", 1500);
+                        // remove from local feed and re-render
+                        currentFeedMaps = currentFeedMaps.filter(m => String(m.id) !== String(map.id));
+                        renderCommunityGrid();
+                    } catch (err) {
+                        showStatus("Não foi possível remover o mapa.", 1800);
+                    }
+                });
+            }
+
             card.appendChild(titleEl);
             card.appendChild(authorEl);
             card.appendChild(meta1);
@@ -741,9 +764,12 @@
     // ===================== MODAIS =====================
     function closeAllModals() {
         document.getElementById("overlay").classList.remove("active");
-        ["win-modal", "lose-modal", "level-select-modal", "help-modal", "game-complete-modal", "pause-modal", "publish-modal", "report-modal"].forEach(id => document.getElementById(id).style.display = "none");
+        ["win-modal", "lose-modal", "level-select-modal", "help-modal", "game-complete-modal", "pause-modal", "publish-modal", "report-modal", "export-modal", "import-modal"].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.style.display = "none";
+        });
     }
-    function showOverlay(modalId) { closeAllModals(); document.getElementById("overlay").classList.add("active"); document.getElementById(modalId).style.display = "block"; }
+    function showOverlay(modalId) { closeAllModals(); document.getElementById("overlay").classList.add("active"); const el = document.getElementById(modalId); if (el) el.style.display = "block"; }
 
     function showWinModal() {
         stopTimer();
@@ -891,7 +917,7 @@
 
                 const icon = document.createElement("div");
                 icon.className = "custom-card-icon";
-                icon.textContent = "HEX";
+                icon.textContent = "🎮";
 
                 const info = document.createElement("div");
                 info.className = "custom-card-info";
@@ -1172,18 +1198,65 @@
                 showStatus("Coloque pelo menos 1 peça!", 1800);
                 return;
             }
-            openPublishModal(editor.toLevel());
+            // Ensure the level is saved locally so it has an id
+            if (!editor.editingId) {
+                editor.saveCustomLevel();
+            }
+            // Require the creator to have completed the level locally before publishing
+            const levelId = editor.editingId;
+            if (!game.save.isCompleted(levelId)) {
+                showStatus("Você precisa completar a fase antes de publicar! Jogue e vença a sua fase primeiro.", 2600);
+                return;
+            }
+            openPublishModal(editor.toLevel(levelId));
         });
         document.getElementById("editor-export").addEventListener("click", () => {
             editor.name = document.getElementById("editor-name").value;
-            const code = editor.exportCode();
-            navigator.clipboard.writeText(code).then(() => showStatus("Código copiado!", 2000)).catch(() => { prompt("Copie o código:", code); });
+            const ta = document.getElementById("export-textarea");
+            if (ta) ta.value = "";
+            showOverlay("export-modal");
         });
         document.getElementById("editor-import").addEventListener("click", () => {
-            const input = prompt("Cole o código (HEX-...) ou JSON da fase:");
-            if (input && editor.importCode(input)) { updateEditorUI(); showStatus("Fase importada!", 2000); }
-            else if (input) { showStatus("Código inválido!", 2000); }
+            const ta = document.getElementById("import-textarea");
+            if (ta) ta.value = "";
+            showOverlay("import-modal");
         });
+
+        // Export modal actions (direct-copy buttons)
+        const exportJsonBtn = document.getElementById("export-json-btn");
+        const exportCodeBtn = document.getElementById("export-code-btn");
+        if (exportJsonBtn) exportJsonBtn.addEventListener("click", async () => {
+            try {
+                const json = editor.exportJson();
+                await navigator.clipboard.writeText(json);
+                showStatus('JSON copiado para a área de transferência.', 1400);
+            } catch (e) {
+                showStatus('Não foi possível copiar o JSON.', 1600);
+            }
+            closeAllModals();
+        });
+        if (exportCodeBtn) exportCodeBtn.addEventListener("click", async () => {
+            try {
+                const code = editor.exportCode();
+                await navigator.clipboard.writeText(code);
+                showStatus('Código (HEX) copiado para a área de transferência.', 1400);
+            } catch (e) {
+                showStatus('Não foi possível copiar o código.', 1600);
+            }
+            closeAllModals();
+        });
+
+        // Import modal actions
+        const importConfirm = document.getElementById("import-confirm-btn");
+        const importCancel = document.getElementById("import-cancel-btn");
+        const importTa = document.getElementById("import-textarea");
+        if (importConfirm) importConfirm.addEventListener("click", () => {
+            const val = importTa ? importTa.value.trim() : "";
+            if (!val) { showStatus("Cole o código ou JSON.", 1600); return; }
+            if (editor.importCode(val)) { updateEditorUI(); closeAllModals(); showStatus("Fase importada!", 2000); }
+            else { showStatus("Código inválido!", 2000); }
+        });
+        if (importCancel) importCancel.addEventListener("click", () => { closeAllModals(); });
 
         // Editor name sync
         document.getElementById("editor-name").addEventListener("input", (e) => { editor.name = e.target.value; });
@@ -1238,7 +1311,11 @@
                     }
                     else if (game.moveLimitExceeded) showLoseModal();
                 }
-            } else { game.selectedHandPiece = null; renderer.placementMode = false; updateHand(); handleRemove(cell); }
+            } else {
+                // Don't deselect the currently selected hand piece when removing
+                renderer.placementMode = false;
+                handleRemove(cell);
+            }
             return;
         }
         handleRemove(cell);

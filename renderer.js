@@ -68,17 +68,17 @@ class Renderer {
         const isMobile = window.matchMedia && window.matchMedia("(max-width: 768px)").matches;
         const tutorialActive = document.body.classList.contains("tutorial-active");
 
-        if (isMobile && tutorialActive) {
-            const tutorialEl = document.getElementById("tutorial-wizard");
-            const handEl = document.getElementById("hand-area");
-            if (tutorialEl && tutorialEl.style.display !== "none") {
-                bottomInset += tutorialEl.getBoundingClientRect().height + 16;
-            }
-            if (handEl && handEl.style.display !== "none") {
-                bottomInset += handEl.getBoundingClientRect().height + 12;
-            }
-            topInset = 4;
+        // Reserve space for overlays and the hand area. Always account for the
+        // hand height when visible so it doesn't overlap the board on desktop.
+        const tutorialEl = document.getElementById("tutorial-wizard");
+        const handEl = document.getElementById("hand-area");
+        if (tutorialEl && tutorialEl.style.display !== "none") {
+            bottomInset += tutorialEl.getBoundingClientRect().height + 16;
         }
+        if (handEl && handEl.style.display !== "none") {
+            bottomInset += handEl.getBoundingClientRect().height + 12;
+        }
+        if (isMobile && tutorialActive) topInset = 4;
 
         const usableWidth = Math.max(this.displayWidth, 120);
         const usableHeight = Math.max(this.displayHeight - topInset - bottomInset, 120);

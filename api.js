@@ -96,6 +96,12 @@ class HexTaticsAPI {
         });
     }
 
+    deleteMap(mapId) {
+        return this._fetch(`/maps/${encodeURIComponent(mapId)}`, {
+            method: "DELETE",
+        });
+    }
+
     async checkLiked(mapId) {
         const response = await this._fetch(`/maps/${encodeURIComponent(mapId)}`);
         return !!response?.data?.liked_by_me;

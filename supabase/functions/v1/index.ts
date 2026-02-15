@@ -25,7 +25,7 @@ const AUTHOR_REGEX = /^[\p{L}\p{N}\s.,!?()-]{1,20}$/u;
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-device-id",
-  "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
+  "Access-Control-Allow-Methods": "GET,POST,DELETE,OPTIONS",
 };
 
 function ok(data: unknown, next_cursor: string | null = null, status = 200) {
@@ -487,6 +487,27 @@ serve(async (req) => {
 
       await recalcHotScore(supabase, mapId);
       return ok({ completed: true });
+    }
+
+    // DELETE /v1/maps/:id  -- allow the creator (device_id) to remove their own map
+    if (req.method === "DELETE" && parts.length === 3 && parts[1] === "maps") {
+      if (!deviceId) return fail("X-Device-ID obrigatório", 400);
+      const mapId = decodeURIComponent(parts[2]);
+
+      const mapRes = await supabase.from("maps").select("id, device_id, status").eq("id", mapId).maybeSingle();
+      if (mapRes.error) return fail("Erro ao validar mapa", 500);
+      if (!mapRes.data) return fail("Mapa não encontrado", 404);
+
+      // Only the original device that published the map may remove it
+      if (String(mapRes.data.device_id) !== String(deviceId)) return fail("Não autorizado", 403);
+
+      // Soft-delete: mark as 'rejected' so it leaves the public feed
+      const upd = await supabase.from("maps").update({ status: "rejected" }).eq("id", mapId);
+      if (upd.error) return fail("Erro ao remover mapa", 500);
+
+      // also recalc hot score asynchronously
+      try { await recalcHotScore(supabase, mapId); } catch (_) { /* ignore */ }
+      return ok({ deleted: true });
     }
 
     return fail("Rota não encontrada", 404);
