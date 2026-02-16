@@ -329,5 +329,140 @@ const LEVELS = [
             { q: 5, r: 3, color: "red", modifier: "green" },
             { q: 3, r: 3, color: "black" },
         ]
+    },
+
+    {
+        id: 16, name: "Fase 16 - Resgate", category: "Personalizada",
+        description: "4● 4▲ 3♦ 1⬢ 3⬟ · 🔄",
+        gridSize: { cols: 8, rows: 7 }, moveLimit: null, par: 15,
+        mask: [
+            [true, true, true, true, true, true, true, true],
+            [true, true, true, true, true, true, true, true],
+            [true, true, true, true, true, true, true, true],
+            [true, true, true, true, true, true, true, true],
+            [true, true, true, true, true, true, true, true],
+            [true, true, true, true, true, true, true, true],
+            [true, true, true, true, true, true, true, true],
+        ],
+        pieces: [
+            { q: 3, r: 1, color: "blue" },
+            { q: 2, r: 2, color: "yellow" },
+            { q: 1, r: 2, color: "red", modifier: "red" },
+            { q: 3, r: 2, color: "black" },
+            { q: 2, r: 3, color: "orange" },
+            { q: 1, r: 3, color: "blue", modifier: "orange" },
+            { q: 2, r: 4, color: "yellow" },
+            { q: 2, r: 5, color: "orange" },
+            { q: 3, r: 4, color: "blue", modifier: "blue" },
+            { q: 1, r: 5, color: "red", modifier: "yellow" },
+            { q: 2, r: 6, color: "yellow", modifier: "yellow" },
+            { q: 4, r: 5, color: "red", modifier: "red" },
+            { q: 5, r: 5, color: "orange" },
+            { q: 5, r: 4, color: "yellow", modifier: "blue" },
+            { q: 4, r: 4, color: "blue", modifier: "yellow" },
+        ]
+    },
+
+    {
+        id: 17, name: "Fase 17 - Âncora", category: "Personalizada",
+        description: "2♦ 2⬟ 2▲ 3⬢ 1■ 2✦ · 🔄🕳️",
+        gridSize: { cols: 7, rows: 8 }, moveLimit: null, par: 12,
+        mask: [
+            [false, true, true, true, true, true, false],
+            [false, true, true, true, true, true, true],
+            [true, true, true, true, true, true, true],
+            [true, true, true, true, true, true, true],
+            [true, true, true, true, true, true, true],
+            [true, true, true, true, true, true, false],
+            [true, true, true, true, true, true, false],
+            [false, true, true, true, true, true, false],
+        ],
+        pieces: [
+            { q: 5, r: 0, color: "red" },
+            { q: 2, r: 1, color: "orange" },
+            { q: 4, r: 1, color: "yellow" },
+            { q: 5, r: 1, color: "black" },
+            { q: 3, r: 2, color: "black" },
+            { q: 4, r: 2, color: "green" },
+            { q: 5, r: 2, color: "purple" },
+            { q: 1, r: 3, color: "black" },
+            { q: 3, r: 3, color: "red", modifier: "black" },
+            { q: 1, r: 4, color: "yellow" },
+            { q: 4, r: 4, color: "purple" },
+            { q: 3, r: 6, color: "orange" },
+        ]
+    },
+
+    {
+        id: 18, name: "Fase 18 - Polimorfo", category: "Personalizada",
+        description: "1♦ 1▲ 1✦ 2● 1■ 1▬ · 🔄",
+        gridSize: { cols: 6, rows: 5 }, moveLimit: null, par: 7,
+        mask: [
+            [true, true, true, true, true, true],
+            [true, true, true, true, true, true],
+            [true, true, true, true, true, true],
+            [true, true, true, true, true, true],
+            [true, true, true, true, true, true],
+        ],
+        pieces: [
+            { q: 1, r: 1, color: "red", modifier: "green" },
+            { q: 2, r: 1, color: "yellow" },
+            { q: 3, r: 1, color: "purple" },
+            { q: 2, r: 2, color: "blue" },
+            { q: 2, r: 3, color: "green" },
+            { q: 3, r: 3, color: "gray" },
+            { q: 4, r: 3, color: "blue" },
+        ]
+    },
+
+    {
+        id: 19, name: "Fase 19 - Prisma", category: "Personalizada",
+        description: "1⬢ 1⬟ 1■ 1◉ 1✦ 1▲ 1● 1♦ · 🔄",
+        gridSize: { cols: 6, rows: 5 }, moveLimit: null, par: 8,
+        mask: [
+            [true, true, true, true, true, true],
+            [true, true, true, true, true, true],
+            [true, true, true, true, true, true],
+            [true, true, true, true, true, true],
+            [true, true, true, true, true, true],
+        ],
+        pieces: [
+            { q: 1, r: 0, color: "black" },
+            { q: 1, r: 1, color: "orange" },
+            { q: 1, r: 2, color: "green" },
+            { q: 3, r: 2, color: "white" },
+            { q: 4, r: 2, color: "purple" },
+            { q: 2, r: 3, color: "yellow" },
+            { q: 3, r: 3, color: "blue" },
+            { q: 2, r: 4, color: "red", modifier: "green" },
+        ]
+    },
+
+    {
+        id: 20, name: "Fase 20 - Potencial máximo", category: "Personalizada",
+        description: "1◉ 1▲ 2● 1✦ 2⬟ 1■ 3♦ 1⬢ · 🔄",
+        gridSize: { cols: 7, rows: 6 }, moveLimit: null, par: 12,
+        mask: [
+            [true, true, true, true, true, true, true],
+            [true, true, true, true, true, true, true],
+            [true, true, true, true, true, true, true],
+            [true, true, true, true, true, true, true],
+            [true, true, true, true, true, true, true],
+            [true, true, true, true, true, true, true],
+        ],
+        pieces: [
+            { q: 5, r: 1, color: "white" },
+            { q: 2, r: 3, color: "yellow" },
+            { q: 3, r: 2, color: "blue", modifier: "orange" },
+            { q: 3, r: 3, color: "blue" },
+            { q: 4, r: 4, color: "purple" },
+            { q: 3, r: 1, color: "orange" },
+            { q: 5, r: 3, color: "orange" },
+            { q: 5, r: 2, color: "green" },
+            { q: 2, r: 1, color: "red", modifier: "yellow" },
+            { q: 3, r: 0, color: "black" },
+            { q: 6, r: 4, color: "red", modifier: "purple" },
+            { q: 4, r: 1, color: "red", modifier: "purple" },
+        ]
     }
 ];
