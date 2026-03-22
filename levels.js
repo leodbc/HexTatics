@@ -259,30 +259,7 @@ const LEVELS = [
     },
 
     {
-        id: 13, name: "Fase 13 - União", category: "Personalizada",
-        description: "1⬟ 1▲ 1■ 1● 2✦ 2♦ · 🔄🕳️",
-        gridSize: { cols: 6, rows: 5 }, moveLimit: null, par: 8,
-        mask: [
-            [false, true, true, true, true, true],
-            [true, true, true, true, true, true],
-            [true, true, true, true, true, true],
-            [true, true, true, true, true, true],
-            [true, true, true, true, true, true],
-        ],
-        pieces: [
-            { q: 3, r: 1, color: "orange" },
-            { q: 0, r: 2, color: "yellow" },
-            { q: 2, r: 2, color: "green", modifier: "red" },
-            { q: 3, r: 2, color: "blue" },
-            { q: 4, r: 2, color: "purple" },
-            { q: 2, r: 3, color: "purple" },
-            { q: 3, r: 3, color: "red", modifier: "purple" },
-            { q: 4, r: 3, color: "red" },
-        ]
-    },
-
-    {
-        id: 14, name: "Fase 14 - Abertura", category: "Personalizada",
+        id: 13, name: "Fase 13 - Abertura", category: "Personalizada",
         description: "4♦ 1● 1⬟ 1◉ · 🕳️",
         gridSize: { cols: 5, rows: 5 }, moveLimit: null, par: 7,
         mask: [
@@ -304,7 +281,7 @@ const LEVELS = [
     },
 
     {
-        id: 15, name: "Fase 15 - Pouco espaço", category: "Personalizada",
+        id: 14, name: "Fase 14 - Pouco espaço", category: "Personalizada",
         description: "2⬢ 1● 1✦ 1⬟ 1▲ 2♦ · 🔄🕳️",
         gridSize: { cols: 7, rows: 4 }, moveLimit: null, par: 8,
         mask: [
@@ -322,6 +299,29 @@ const LEVELS = [
             { q: 4, r: 2, color: "yellow" },
             { q: 0, r: 3, color: "red", modifier: "purple" },
             { q: 1, r: 3, color: "red" },
+        ]
+    },
+
+    {
+        id: 15, name: "Fase 15 - União", category: "Personalizada",
+        description: "1⬟ 1▲ 1■ 1● 2✦ 2♦ · 🔄🕳️",
+        gridSize: { cols: 6, rows: 5 }, moveLimit: null, par: 8,
+        mask: [
+            [false, true, true, true, true, true],
+            [true, true, true, true, true, true],
+            [true, true, true, true, true, true],
+            [true, true, true, true, true, true],
+            [true, true, true, true, true, true],
+        ],
+        pieces: [
+            { q: 3, r: 1, color: "orange" },
+            { q: 0, r: 2, color: "yellow" },
+            { q: 2, r: 2, color: "green", modifier: "red" },
+            { q: 3, r: 2, color: "blue" },
+            { q: 4, r: 2, color: "purple" },
+            { q: 2, r: 3, color: "purple" },
+            { q: 3, r: 3, color: "red", modifier: "purple" },
+            { q: 4, r: 3, color: "red" },
         ]
     },
 
