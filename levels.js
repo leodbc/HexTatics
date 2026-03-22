@@ -165,8 +165,8 @@ const LEVELS = [
     },
 
     {
-        id: 9, name: "Fase 9 - Laranja legal", category: "Personalizada",
-        description: "6♦ 1⬟ 1● 1▲ · 🕳️",
+        id: "custom_test", name: "Fase 9 - Laranja legal", category: "Personalizada",
+        description: "6♦ 1⬟ 1● 1▲ · 🔄🕳️",
         gridSize: { cols: 5, rows: 4 }, moveLimit: null, par: 9,
         mask: [
             [false, false, false, false, false],
@@ -178,17 +178,41 @@ const LEVELS = [
             { q: 0, r: 2, color: "red" },
             { q: 1, r: 2, color: "orange" },
             { q: 2, r: 2, color: "red" },
-            { q: 4, r: 2, color: "red" },
+            { q: 4, r: 2, color: "red", modifier: "blue" },
             { q: 0, r: 3, color: "red" },
             { q: 1, r: 3, color: "blue" },
             { q: 2, r: 3, color: "yellow" },
-            { q: 3, r: 3, color: "red" },
+            { q: 3, r: 3, color: "red", modifier: "blue" },
             { q: 4, r: 3, color: "red" },
         ]
     },
 
     {
-        id: 10, name: "Fase 10 - Escalada", category: "Personalizada",
+        id: 10, name: "Fase 10 - Trapézio", category: "Personalizada",
+        description: "3♦ 1⬟ 1■ 1● 1⬢ 1▲ · 🕳️",
+        gridSize: { cols: 6, rows: 6 }, moveLimit: null, par: 8,
+        mask: [
+            [false, false, false, false, false, false],
+            [false, true, true, true, true, true],
+            [false, true, true, true, true, true],
+            [false, true, true, true, true, true],
+            [false, true, true, true, true, true],
+            [false, false, true, true, true, false],
+        ],
+        pieces: [
+            { q: 2, r: 2, color: "red" },
+            { q: 3, r: 2, color: "orange" },
+            { q: 4, r: 2, color: "red" },
+            { q: 3, r: 3, color: "green" },
+            { q: 4, r: 3, color: "blue" },
+            { q: 2, r: 4, color: "black" },
+            { q: 3, r: 4, color: "red" },
+            { q: 4, r: 4, color: "yellow" },
+        ]
+    },
+
+    {
+        id: 11, name: "Fase 11 - Escalada", category: "Personalizada",
         description: "4♦ 3⬟ 1▲ 2● · 🔄",
         gridSize: { cols: 7, rows: 6 }, moveLimit: null, par: 10,
         mask: [
@@ -214,7 +238,7 @@ const LEVELS = [
     },
 
     {
-        id: 11, name: "Fase 11 - Roxo polar", category: "Personalizada",
+        id: 12, name: "Fase 12 - Roxo polar", category: "Personalizada",
         description: "2♦ 2✦ 1● 1▲",
         gridSize: { cols: 5, rows: 5 }, moveLimit: null, par: 6,
         mask: [
@@ -235,7 +259,52 @@ const LEVELS = [
     },
 
     {
-        id: 12, name: "Fase 12 - Pouco espaço", category: "Personalizada",
+        id: 13, name: "Fase 13 - União", category: "Personalizada",
+        description: "1⬟ 1▲ 1■ 1● 2✦ 2♦ · 🔄🕳️",
+        gridSize: { cols: 6, rows: 5 }, moveLimit: null, par: 8,
+        mask: [
+            [false, true, true, true, true, true],
+            [true, true, true, true, true, true],
+            [true, true, true, true, true, true],
+            [true, true, true, true, true, true],
+            [true, true, true, true, true, true],
+        ],
+        pieces: [
+            { q: 3, r: 1, color: "orange" },
+            { q: 0, r: 2, color: "yellow" },
+            { q: 2, r: 2, color: "green", modifier: "red" },
+            { q: 3, r: 2, color: "blue" },
+            { q: 4, r: 2, color: "purple" },
+            { q: 2, r: 3, color: "purple" },
+            { q: 3, r: 3, color: "red", modifier: "purple" },
+            { q: 4, r: 3, color: "red" },
+        ]
+    },
+
+    {
+        id: 14, name: "Fase 14 - Abertura", category: "Personalizada",
+        description: "4♦ 1● 1⬟ 1◉ · 🕳️",
+        gridSize: { cols: 5, rows: 5 }, moveLimit: null, par: 7,
+        mask: [
+            [false, false, false, false, false],
+            [false, true, true, true, false],
+            [true, true, true, true, true],
+            [true, true, true, true, true],
+            [true, true, true, true, true],
+        ],
+        pieces: [
+            { q: 2, r: 2, color: "red" },
+            { q: 3, r: 2, color: "blue" },
+            { q: 1, r: 3, color: "red" },
+            { q: 2, r: 3, color: "orange" },
+            { q: 3, r: 3, color: "red" },
+            { q: 4, r: 3, color: "white" },
+            { q: 2, r: 4, color: "red" },
+        ]
+    },
+
+    {
+        id: 15, name: "Fase 15 - Pouco espaço", category: "Personalizada",
         description: "2⬢ 1● 1✦ 1⬟ 1▲ 2♦ · 🔄🕳️",
         gridSize: { cols: 7, rows: 4 }, moveLimit: null, par: 8,
         mask: [
@@ -257,7 +326,30 @@ const LEVELS = [
     },
 
     {
-        id: 13, name: "Fase 13 - Chave", category: "Personalizada",
+        id: 16, name: "Fase 16 - Antecipação", category: "Personalizada",
+        description: "1▲ 1⬢ 1◉ 1● 1■ 1✦ 1♦ · 🔄",
+        gridSize: { cols: 7, rows: 6 }, moveLimit: null, par: 7,
+        mask: [
+            [true, true, true, true, true, true, true],
+            [true, true, true, true, true, true, true],
+            [true, true, true, true, true, true, true],
+            [true, true, true, true, true, true, true],
+            [true, true, true, true, true, true, true],
+            [true, true, true, true, true, true, true],
+        ],
+        pieces: [
+            { q: 2, r: 0, color: "yellow" },
+            { q: 3, r: 0, color: "black", modifier: "white" },
+            { q: 3, r: 2, color: "white" },
+            { q: 2, r: 3, color: "blue" },
+            { q: 3, r: 3, color: "green" },
+            { q: 4, r: 4, color: "purple" },
+            { q: 3, r: 4, color: "red" },
+        ]
+    },
+
+    {
+        id: 17, name: "Fase 17 - Chave", category: "Personalizada",
         description: "2✦ 3⬢ 1▲ 1● 1⬟ 1■ 1♦ 1◉ · 🔄",
         gridSize: { cols: 7, rows: 6 }, moveLimit: null, par: 11,
         mask: [
@@ -284,7 +376,7 @@ const LEVELS = [
     },
 
     {
-        id: 14, name: "Fase 14 - Escanteio", category: "Personalizada",
+        id: 18, name: "Fase 18 - Escanteio", category: "Personalizada",
         description: "5▲ 1● 1⬟ 1♦",
         gridSize: { cols: 7, rows: 5 }, moveLimit: null, par: 8,
         mask: [
@@ -307,7 +399,7 @@ const LEVELS = [
     },
 
     {
-        id: 15, name: "Fase 15 - Flexível", category: "Personalizada",
+        id: 19, name: "Fase 19 - Flexível", category: "Personalizada",
         description: "1▬ 2● 1✦ 1▲ 1■ 2♦ 1⬢ · 🔄",
         gridSize: { cols: 7, rows: 6 }, moveLimit: null, par: 8,
         mask: [
@@ -332,7 +424,7 @@ const LEVELS = [
     },
 
     {
-        id: 16, name: "Fase 16 - Resgate", category: "Personalizada",
+        id: 20, name: "Fase 20 - Resgate", category: "Personalizada",
         description: "4● 4▲ 3♦ 1⬢ 3⬟ · 🔄",
         gridSize: { cols: 8, rows: 7 }, moveLimit: null, par: 15,
         mask: [
@@ -364,7 +456,7 @@ const LEVELS = [
     },
 
     {
-        id: 17, name: "Fase 17 - Âncora", category: "Personalizada",
+        id: 21, name: "Fase 21 - Âncora", category: "Personalizada",
         description: "2♦ 2⬟ 2▲ 3⬢ 1■ 2✦ · 🔄🕳️",
         gridSize: { cols: 7, rows: 8 }, moveLimit: null, par: 12,
         mask: [
@@ -394,7 +486,7 @@ const LEVELS = [
     },
 
     {
-        id: 18, name: "Fase 18 - Polimorfo", category: "Personalizada",
+        id: 22, name: "Fase 22 - Polimorfo", category: "Personalizada",
         description: "1♦ 1▲ 1✦ 2● 1■ 1▬ · 🔄",
         gridSize: { cols: 6, rows: 5 }, moveLimit: null, par: 7,
         mask: [
@@ -416,7 +508,7 @@ const LEVELS = [
     },
 
     {
-        id: 19, name: "Fase 19 - Prisma", category: "Personalizada",
+        id: 23, name: "Fase 23 - Prisma", category: "Personalizada",
         description: "1⬢ 1⬟ 1■ 1◉ 1✦ 1▲ 1● 1♦ · 🔄",
         gridSize: { cols: 6, rows: 5 }, moveLimit: null, par: 8,
         mask: [
@@ -439,7 +531,7 @@ const LEVELS = [
     },
 
     {
-        id: 20, name: "Fase 20 - Potencial máximo", category: "Personalizada",
+        id: 24, name: "Fase 24 - Potencial máximo", category: "Personalizada",
         description: "1◉ 1▲ 2● 1✦ 2⬟ 1■ 3♦ 1⬢ · 🔄",
         gridSize: { cols: 7, rows: 6 }, moveLimit: null, par: 12,
         mask: [
