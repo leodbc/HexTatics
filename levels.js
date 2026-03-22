@@ -165,7 +165,7 @@ const LEVELS = [
     },
 
     {
-        id: "custom_test", name: "Fase 9 - Laranja legal", category: "Personalizada",
+        id: 9, name: "Fase 9 - Laranja legal", category: "Personalizada",
         description: "6♦ 1⬟ 1● 1▲ · 🔄🕳️",
         gridSize: { cols: 5, rows: 4 }, moveLimit: null, par: 9,
         mask: [
